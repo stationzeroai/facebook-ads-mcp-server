@@ -1,5 +1,7 @@
 # Facebook Ads MCP Server
 
+[![smithery badge](https://smithery.ai/badge/@gomarble-ai/facebook-ads-mcp-server)](https://smithery.ai/server/@gomarble-ai/facebook-ads-mcp-server)
+
 This project provides an MCP server acting as an interface to the Facebook Ads, enabling programmatic access to Facebook Ads data and management features.
 
 ## Prerequisites
@@ -124,3 +126,11 @@ This setup **does not require** you to manually obtain a Facebook Developer Acce
 
 Instead, it connects securely to **GoMarble’s server to create the token on your behalf**.  
 GoMarble **does not store** your token — it is saved locally on your machine for use with the MCP server.
+
+### Installing via Smithery
+
+To install Facebook Ads Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@gomarble-ai/facebook-ads-mcp-server):
+
+```bash
+npx -y @smithery/cli install @gomarble-ai/facebook-ads-mcp-server --client claude
+```
