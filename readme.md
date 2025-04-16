@@ -107,24 +107,25 @@ This project is licensed under the MIT License.
 
 ---
 
-## Easy One-Click Setup (Windows Only)
+## Easy One-Click Setup
 
-For a simpler setup experience, we offer a ready-to-use Windows installer:
+For a simpler setup experience, we offer ready-to-use installers:
 
-👉 **[Download gomarble_mcp_tools.exe for Windows](https://raw.githubusercontent.com/gomarble-ai/facebook-ads-mcp-server/main/installer/win/gomarble_mcp_tools.exe)**
+*   **Windows:** 👉 [Download gomarble_mcp_tools.exe](https://raw.githubusercontent.com/gomarble-ai/facebook-ads-mcp-server/main/installer/win/gomarble_mcp_tools.exe)
+*   **MacOS:** 👉 [Download gomarble_mcp_tools.pkg](https://raw.githubusercontent.com/gomarble-ai/facebook-ads-mcp-server/main/installer/macos/gomarble_mcp_tools.pkg)
 
 ### What It Does
 
 - Installs and configures the MCP server locally
 - Automatically handles environment setup
 - Prompts for Facebook token authentication during the process which is optional
-- If facebook access token is not provided then connect to GoMarble’s server to create the token on your behalf
+- If facebook access token is not provided then connect to GoMarble's server to create the token on your behalf
 
 ### Important Disclaimer
 
 This setup **does not require** you to manually obtain a Facebook Developer Access Token.
 
-Instead, it connects securely to **GoMarble’s server to create the token on your behalf**.  
+Instead, it connects securely to **GoMarble's server to create the token on your behalf**.  
 GoMarble **does not store** your token — it is saved locally on your machine for use with the MCP server.
 
 ### Installing via Smithery
