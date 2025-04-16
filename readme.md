@@ -4,12 +4,37 @@
 
 This project provides an MCP server acting as an interface to the Facebook Ads, enabling programmatic access to Facebook Ads data and management features.
 
-## Prerequisites
+## Easy One-Click Setup
+
+For a simpler setup experience, we offer ready-to-use installers:
+
+*   **⊞ Windows:** 👉 [Download gomarble_mcp_tools.exe](https://raw.githubusercontent.com/gomarble-ai/facebook-ads-mcp-server/main/installer/win/gomarble_mcp_tools.exe)
+*   ** MacOS:** 👉 [Download gomarble_mcp_tools.pkg](https://raw.githubusercontent.com/gomarble-ai/facebook-ads-mcp-server/main/installer/macos/gomarble_mcp_tools.pkg)
+
+### What It Does
+
+- Installs and configures the MCP server locally
+- Automatically handles environment setup
+- Prompts for Facebook token authentication during the process which is optional
+- If facebook access token is not provided then connect to GoMarble's server to create the token on your behalf
+
+### Important Disclaimer
+
+This setup **does not require** you to manually obtain a Facebook Developer Access Token.
+
+Instead, it connects securely to **GoMarble's server to create the token on your behalf**.
+GoMarble **does not store** your token — it is saved locally on your machine for use with the MCP server.
+
+---
+
+## Setup
+
+### Prerequisites
 
 *   Python 3.10+
 *   Dependencies listed in `requirements.txt`
 
-## Setup
+
 
 1.  **(Optional but Recommended) Create and Activate a Virtual Environment:**
     ```bash
@@ -24,7 +49,7 @@ This project provides an MCP server acting as an interface to the Facebook Ads, 
     ```
 3.  **Obtain Facebook Access Token:** Secure a Facebook User Access Token with the necessary permissions (e.g., `ads_read`). You can generate this through the Facebook Developer portal. Follow [this link](https://elfsight.com/blog/how-to-get-facebook-access-token/).
 
-## Usage with MCP Clients (e.g., Cursor, Claude Desktop)
+### Usage with MCP Clients (e.g., Cursor, Claude Desktop)
 
 To integrate this server with an MCP-compatible client, add a configuration([Claude](https://modelcontextprotocol.io/quickstart/user#2-add-the-filesystem-mcp-server)) similar to the following. Replace `YOUR_FACEBOOK_ACCESS_TOKEN` with your actual token and adjust the path to `server.py` if necessary.
 
@@ -53,7 +78,7 @@ Restart the MCP Client app after making the update in the configuration.
 
 *(Note: On Windows, you might need to adjust the command structure or use `cmd /k` depending on your setup.)*
 
-## Debugging the Server
+### Debugging the Server
 
 Execute `server.py`, providing the access token via the `--fb-token` argument.
 
@@ -61,7 +86,7 @@ Execute `server.py`, providing the access token via the `--fb-token` argument.
 python server.py --fb-token YOUR_FACEBOOK_ACCESS_TOKEN
 ```
 
-## Available MCP Tools
+### Available MCP Tools
 
 This MCP server provides tools for interacting with Facebook Ads objects and data:
 
@@ -97,38 +122,17 @@ This MCP server provides tools for interacting with Facebook Ads objects and dat
 
 *(Note: If your Facebook access token expires, you'll need to generate a new one and update the configuration file of the MCP Client with new token to continue using the tools.)*
 
-## Dependencies
+### Dependencies
 
 *   [mcp](https://pypi.org/project/mcp/) (>=1.6.0)
 *   [requests](https://pypi.org/project/requests/) (>=2.32.3)
 
-## License
+### License
 This project is licensed under the MIT License.
 
 ---
 
-## Easy One-Click Setup
-
-For a simpler setup experience, we offer ready-to-use installers:
-
-*   **Windows:** 👉 [Download gomarble_mcp_tools.exe](https://raw.githubusercontent.com/gomarble-ai/facebook-ads-mcp-server/main/installer/win/gomarble_mcp_tools.exe)
-*   **MacOS:** 👉 [Download gomarble_mcp_tools.pkg](https://raw.githubusercontent.com/gomarble-ai/facebook-ads-mcp-server/main/installer/macos/gomarble_mcp_tools.pkg)
-
-### What It Does
-
-- Installs and configures the MCP server locally
-- Automatically handles environment setup
-- Prompts for Facebook token authentication during the process which is optional
-- If facebook access token is not provided then connect to GoMarble's server to create the token on your behalf
-
-### Important Disclaimer
-
-This setup **does not require** you to manually obtain a Facebook Developer Access Token.
-
-Instead, it connects securely to **GoMarble's server to create the token on your behalf**.  
-GoMarble **does not store** your token — it is saved locally on your machine for use with the MCP server.
-
-### Installing via Smithery
+## Installing via Smithery
 
 To install Facebook Ads Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@gomarble-ai/facebook-ads-mcp-server):
 
