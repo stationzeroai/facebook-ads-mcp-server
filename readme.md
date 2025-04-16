@@ -4,6 +4,8 @@
 
 This project provides an MCP server acting as an interface to the Facebook Ads, enabling programmatic access to Facebook Ads data and management features.
 
+<video controls width="1920" height="512" src="assets/claude_demo.mp4">Your browser does not support the video tag.</video>
+
 ## Easy One-Click Setup
 
 For a simpler setup experience, we offer ready-to-use installers:
