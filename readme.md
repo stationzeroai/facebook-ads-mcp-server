@@ -10,7 +10,7 @@ This project provides an MCP server acting as an interface to the Facebook Ads, 
 
 For a simpler setup experience, we offer ready-to-use installers:
 
-👉 **Download installer**(https://gomarble.ai/mcp)
+👉 **Download installer -** [https://gomarble.ai/mcp](https://gomarble.ai/mcp)
 
 ### What It Does
 
