@@ -10,8 +10,7 @@ This project provides an MCP server acting as an interface to the Facebook Ads, 
 
 For a simpler setup experience, we offer ready-to-use installers:
 
-*   **⊞ Windows:** 👉 [Download gomarble_mcp_tools.exe](https://raw.githubusercontent.com/gomarble-ai/facebook-ads-mcp-server/main/installer/win/gomarble_mcp_tools.exe)
-*   ** MacOS:** 👉 [Download gomarble_mcp_tools.pkg](https://raw.githubusercontent.com/gomarble-ai/facebook-ads-mcp-server/main/installer/macos/gomarble_mcp_tools.pkg)
+👉 **Download installer**(https://gomarble.ai/mcp)
 
 ### What It Does
 
