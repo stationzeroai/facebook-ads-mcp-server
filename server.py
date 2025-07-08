@@ -199,7 +199,14 @@ def _build_insights_params(
 # --- MCP Tools ---
 @mcp.tool()
 def list_ad_accounts() -> Dict:
-    """List down the ad accounts and their names associated with your Facebook account"""
+    """List down the ad accounts and their names associated with your Facebook account.
+        CRITICAL: This function MUST automatically fetch ALL pages using pagination. 
+        When the response contains a 'paging.next' URL, IMMEDIATELY and AUTOMATICALLY 
+        use the facebook_fetch_pagination_url tool to fetch the next page. Continue 
+        this process until no 'next' URL exists. Do NOT ask the user for permission 
+        to continue pagination. Do NOT stop after the first page. Always return the 
+        complete consolidated list of ALL ad accounts across all pages in a single 
+        response. This is a requirement, not optional behavior."""
     # This uses a specific endpoint structure not fitting _fetch_node/_fetch_edge easily
     access_token = _get_fb_access_token()
     url = f"{FB_GRAPH_URL}/me"
@@ -260,7 +267,14 @@ def get_adaccount_insights(
     This tool interfaces with the Facebook Graph API's Insights edge to fetch comprehensive
     performance data, such as impressions, reach, cost, conversions, and more. It supports
     various options for filtering, time breakdowns, and attribution settings. Note that
-    some metrics returned might be estimated or in development.
+    some metrics returned might be estimated or in development
+    CRITICAL: This function MUST automatically fetch ALL pages using pagination. 
+    When the response contains a 'paging.next' URL, IMMEDIATELY and AUTOMATICALLY 
+    use the facebook_fetch_pagination_url tool to fetch the next page. Continue 
+    this process until no 'next' URL exists. Do NOT ask the user for permission 
+    to continue pagination. Do NOT stop after the first page. Always return the 
+    complete consolidated list of ALL ad accounts across all pages in a single 
+    response. This is a requirement, not optional behavior..
 
     Args:
         act_id (str): The target ad account ID, prefixed with 'act_', e.g., 'act_1234567890'.
