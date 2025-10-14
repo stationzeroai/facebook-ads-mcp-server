@@ -2,9 +2,9 @@
   "dxt_version": "0.1",
   "name": "facebook-ads-mcp-server",
   "display_name": "Facebook Ads MCP Server",
-  "version": "0.1.0",
-  "description": "A Python MCP server for Facebook Ads API integration",
-  "long_description": "This extension provides comprehensive Facebook Ads management capabilities through a Python MCP server. It enables programmatic access to Facebook Ads data and management features, including account management, campaign insights, ad set operations, and performance analytics through the Facebook Graph API.",
+  "version": "2.0.0",
+  "description": "A comprehensive Python MCP server for Facebook Ads API with full CRUD operations",
+  "long_description": "This extension provides comprehensive Facebook Ads management capabilities through a Python MCP server with full CRUD operations. It enables programmatic access to create, read, update, and delete campaigns, ad sets, ads, and creatives. Features include Campaign Budget Optimization (CBO), Ad Set Budget Optimization (ABO), Dynamic Product Ads (DPA) with Advantage+ features, advanced targeting, S3 media integration, performance insights, and smart query tools. All 34 tools are prefixed with 'facebook_' to prevent namespace collisions when used alongside other MCP servers.",
   "author": {
     "name": "GoMarble AI",
     "email": "support@gomarble.ai",
@@ -19,7 +19,17 @@
       "args": [
         "${__dirname}/server.py",
         "--fb-token",
-        "${user_config.facebook_access_token}"
+        "${user_config.facebook_access_token}",
+        "--pixel-id",
+        "${user_config.pixel_id}",
+        "--page-id",
+        "${user_config.page_id}",
+        "--instagram-user-id",
+        "${user_config.instagram_user_id}",
+        "--catalog-id",
+        "${user_config.catalog_id}",
+        "--website-domain",
+        "${user_config.website_domain}"
       ],
       "env": {
         "DEBUG": "${user_config.debug_mode}",
@@ -30,113 +40,207 @@
   },
   "tools": [
     {
-      "name": "list_ad_accounts",
-      "description": "Lists ad accounts linked to the Facebook access token"
+      "name": "facebook_create_cbo_campaign",
+      "description": "Create a Campaign Budget Optimization (CBO) campaign with budget managed at campaign level"
     },
     {
-      "name": "get_details_of_ad_account",
-      "description": "Retrieves details for a specific ad account"
+      "name": "facebook_create_abo_campaign",
+      "description": "Create an Ad Set Budget Optimization (ABO) campaign with budget managed at ad set level"
     },
     {
-      "name": "get_adaccount_insights",
-      "description": "Retrieves performance insights for an ad account"
+      "name": "facebook_update_campaign_budget",
+      "description": "Update the daily or lifetime budget of an existing campaign"
     },
     {
-      "name": "get_campaign_insights",
-      "description": "Retrieves performance insights for a campaign"
+      "name": "facebook_deactivate_or_activate_campaign",
+      "description": "Change campaign status (ACTIVE, PAUSED, ARCHIVED, or DELETED)"
     },
     {
-      "name": "get_adset_insights",
-      "description": "Retrieves performance insights for an ad set"
+      "name": "facebook_get_campaign_by_id",
+      "description": "Retrieve detailed information about a specific campaign by its ID"
     },
     {
-      "name": "get_ad_insights",
-      "description": "Retrieves performance insights for an ad"
+      "name": "facebook_get_campaigns_by_adaccount",
+      "description": "List all campaigns in an ad account with filtering and pagination"
     },
     {
-      "name": "fetch_pagination_url",
-      "description": "Fetches data from a pagination URL"
+      "name": "facebook_create_adset",
+      "description": "Create a new ad set with comprehensive targeting options (geo, interests, Advantage+ Audience)"
     },
     {
-      "name": "get_ad_creative_by_id",
-      "description": "Retrieves details for a specific ad creative"
+      "name": "facebook_update_adset",
+      "description": "Update an existing ad set's properties including targeting, budget, and bid strategy"
     },
     {
-      "name": "get_ad_creatives_by_ad_id",
-      "description": "Retrieves creatives associated with an ad"
+      "name": "facebook_get_adset_by_id",
+      "description": "Retrieve detailed information about a specific ad set by its ID"
     },
     {
-      "name": "get_ad_by_id",
-      "description": "Retrieves details for a specific ad"
+      "name": "facebook_get_adsets_by_ids",
+      "description": "Retrieve information about multiple ad sets by their IDs in batch"
     },
     {
-      "name": "get_ads_by_adaccount",
-      "description": "Retrieves ads within an ad account"
+      "name": "facebook_get_adsets_by_adaccount",
+      "description": "List all ad sets in an ad account with filtering and pagination"
     },
     {
-      "name": "get_ads_by_campaign",
-      "description": "Retrieves ads within a campaign"
+      "name": "facebook_get_adsets_by_campaign",
+      "description": "List all ad sets within a specific campaign"
     },
     {
-      "name": "get_ads_by_adset",
-      "description": "Retrieves ads within an ad set"
+      "name": "facebook_create_catalog_creative",
+      "description": "Create a catalog-based creative for Dynamic Product Ads (DPA) with Advantage+ features"
     },
     {
-      "name": "get_adset_by_id",
-      "description": "Retrieves details for a specific ad set"
+      "name": "facebook_create_ad_with_catalog_creative",
+      "description": "Create a new ad using an existing catalog creative"
     },
     {
-      "name": "get_adsets_by_ids",
-      "description": "Retrieves details for multiple ad sets by their IDs"
+      "name": "facebook_fetch_product_sets",
+      "description": "Retrieve product sets from a Meta product catalog for DPA campaigns"
     },
     {
-      "name": "get_adsets_by_adaccount",
-      "description": "Retrieves ad sets within an ad account"
+      "name": "facebook_edit_ad",
+      "description": "Update an existing ad's properties (name, status, creative, ad set)"
     },
     {
-      "name": "get_adsets_by_campaign",
-      "description": "Retrieves ad sets within a campaign"
+      "name": "facebook_bulk_update_status",
+      "description": "Update the status of multiple ads at once in a single operation"
     },
     {
-      "name": "get_campaign_by_id",
-      "description": "Retrieves details for a specific campaign"
+      "name": "facebook_get_ad_by_id",
+      "description": "Retrieve detailed information about a specific ad by its ID"
     },
     {
-      "name": "get_campaigns_by_adaccount",
-      "description": "Retrieves campaigns within an ad account"
+      "name": "facebook_get_ads_by_adaccount",
+      "description": "List all ads in an ad account with filtering and pagination"
     },
     {
-      "name": "get_activities_by_adaccount",
-      "description": "Retrieves change history for an ad account"
+      "name": "facebook_get_ads_by_campaign",
+      "description": "List all ads within a specific campaign"
     },
     {
-      "name": "get_activities_by_adset",
-      "description": "Retrieves change history for an ad set"
+      "name": "facebook_get_ads_by_adset",
+      "description": "List all ads within a specific ad set"
+    },
+    {
+      "name": "facebook_get_ad_creative_by_id",
+      "description": "Retrieve detailed information about a specific ad creative by its ID"
+    },
+    {
+      "name": "facebook_search_ad_interests",
+      "description": "Search for Facebook ad targeting interests by keyword with pt_BR locale support"
+    },
+    {
+      "name": "facebook_get_region_key_for_adsets",
+      "description": "Get region keys for geo-targeting (especially Brazilian states) in ad sets"
+    },
+    {
+      "name": "facebook_list_pixels",
+      "description": "List all Meta Pixels associated with an ad account"
+    },
+    {
+      "name": "facebook_fetch_campaigns_by_name",
+      "description": "Search campaigns by name with optional performance insights"
+    },
+    {
+      "name": "facebook_fetch_adsets_by_name",
+      "description": "Search ad sets by name with optional performance insights"
+    },
+    {
+      "name": "facebook_fetch_objects_by_name",
+      "description": "Universal search for campaigns, ad sets, and ads by name with insights"
+    },
+    {
+      "name": "facebook_get_adaccount_insights",
+      "description": "Retrieve performance insights and analytics for an ad account"
+    },
+    {
+      "name": "facebook_get_campaign_insights",
+      "description": "Retrieve performance insights and analytics for a campaign"
+    },
+    {
+      "name": "facebook_get_adset_insights",
+      "description": "Retrieve performance insights and analytics for an ad set"
+    },
+    {
+      "name": "facebook_get_ad_insights",
+      "description": "Retrieve performance insights and analytics for an ad"
+    },
+    {
+      "name": "facebook_fetch_pagination_url",
+      "description": "Fetch the next or previous page of insights data using a pagination URL"
+    },
+    {
+      "name": "facebook_create_ad_with_media_creative_from_s3_folder_link",
+      "description": "Create an ad with media creative by downloading from S3, uploading to Facebook, and auto-detecting media type"
     }
   ],
   "keywords": [
     "facebook",
+    "meta",
     "ads",
     "marketing",
     "analytics",
     "advertising",
     "campaigns",
     "insights",
-    "social media"
+    "social media",
+    "crud",
+    "dpa",
+    "dynamic product ads",
+    "advantage plus",
+    "targeting",
+    "s3"
   ],
   "license": "MIT",
   "user_config": {
     "facebook_access_token": {
       "type": "string",
       "title": "Facebook Access Token",
-      "description": "Facebook User Access Token with necessary permissions (e.g., ads_read)",
+      "description": "Facebook User Access Token with necessary permissions (ads_read, ads_management, etc.)",
       "required": true,
       "sensitive": true
+    },
+    "pixel_id": {
+      "type": "string",
+      "title": "Meta Pixel ID",
+      "description": "Your Meta Pixel ID for conversion tracking (optional, can be set per ad set)",
+      "required": false,
+      "sensitive": false
+    },
+    "page_id": {
+      "type": "string",
+      "title": "Facebook Page ID",
+      "description": "Your Facebook Page ID for ad creatives (optional, can be set per creative)",
+      "required": false,
+      "sensitive": false
+    },
+    "instagram_user_id": {
+      "type": "string",
+      "title": "Instagram User ID",
+      "description": "Your Instagram User ID for Instagram placements (optional)",
+      "required": false,
+      "sensitive": false
+    },
+    "catalog_id": {
+      "type": "string",
+      "title": "Product Catalog ID",
+      "description": "Your Meta Product Catalog ID for Dynamic Product Ads (optional)",
+      "required": false,
+      "sensitive": false
+    },
+    "website_domain": {
+      "type": "string",
+      "title": "Website Domain",
+      "description": "Your website domain for conversion tracking (optional, e.g., example.com)",
+      "required": false,
+      "sensitive": false
     },
     "debug_mode": {
       "type": "boolean",
       "title": "Debug Mode",
-      "description": "Enable debug output",
+      "description": "Enable debug output for troubleshooting",
       "default": false,
       "required": false
     }
