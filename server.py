@@ -1154,3 +1154,36 @@ async def facebook_create_ad_with_media_creative_from_s3_folder_link(
         aws_access_key_id, aws_secret_access_key,
         aws_region, status
     )
+
+
+# ==============================================================================
+# MAIN ENTRY POINT
+# ==============================================================================
+
+def main():
+    """Main entry point for the Facebook Ads MCP Server.
+
+    This function is called when the server is started via the installed
+    command-line script (facebook-ads-mcp-server).
+    """
+    import logging
+
+    # Configure logging to stderr (stdout must be reserved for JSON-RPC)
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    logger = logging.getLogger(__name__)
+
+    try:
+        logger.info("Starting Facebook Ads MCP Server...")
+        # Configuration is already initialized at module import time
+        # via init_config_from_args() call at the top of this module
+        mcp.run()
+    except Exception as e:
+        logger.error(f"Failed to start server: {e}")
+        raise
+
+
+if __name__ == "__main__":
+    main()
