@@ -41,10 +41,10 @@ Repository = "https://github.com/gomarble-ai/facebook-ads-mcp-server"
 Issues = "https://github.com/gomarble-ai/facebook-ads-mcp-server/issues"
 
 [project.scripts]
-facebook-ads-mcp-server = "server:main"
+facebook-ads-mcp-server = "__main__:main"
 
 [tool.setuptools]
-py-modules = ["server"]
+py-modules = ["server", "__main__"]
 
 [tool.setuptools.packages.find]
 where = ["."]

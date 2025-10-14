@@ -10,13 +10,13 @@ import httpx
 from .api import (
     FB_GRAPH_URL,
     get_access_token,
+    get_act_id,
     _make_graph_api_call,
     _build_insights_params
 )
 
 
 async def get_adaccount_insights(
-    act_id: str,
     fields: Optional[List[str]] = None,
     date_preset: str = 'last_30d',
     time_range: Optional[Dict[str, str]] = None,
@@ -56,7 +56,6 @@ async def get_adaccount_insights(
     response. This is a requirement, not optional behavior.
 
     Args:
-        act_id (str): The target ad account ID, prefixed with 'act_', e.g., 'act_1234567890'.
         fields (Optional[List[str]]): A list of specific metrics and fields to retrieve.
             If omitted, a default set is returned by the API. Common examples include:
                 - 'account_currency', 'account_id', 'account_name'
@@ -135,7 +134,6 @@ async def get_adaccount_insights(
         ```python
         # Get basic ad account performance for the last 30 days
         insights = await get_adaccount_insights(
-            act_id="act_123456789",
             fields=["impressions", "clicks", "spend", "ctr"],
             limit=25
         )
@@ -147,6 +145,7 @@ async def get_adaccount_insights(
             print("Fetched next page results.")
         ```
     """
+    act_id = get_act_id()
     access_token = get_access_token()
     url = f"{FB_GRAPH_URL}/{act_id}/insights"
     params = {'access_token': access_token}

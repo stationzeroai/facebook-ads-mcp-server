@@ -7,8 +7,12 @@ global configuration management for all Facebook Ads tools.
 
 import json
 import sys
+import logging
 from typing import Dict, List, Optional, Any
 import httpx
+
+# Configure logging to stderr (stdout must be reserved for JSON-RPC)
+logger = logging.getLogger(__name__)
 
 
 # --- Constants ---
@@ -25,6 +29,7 @@ DEFAULT_AD_ACCOUNT_FIELDS = [
 # --- Global State ---
 _CONFIG = {
     'access_token': None,
+    'act_id': None,
     'pixel_id': None,
     'page_id': None,
     'instagram_user_id': None,
@@ -39,6 +44,7 @@ def init_config_from_args():
 
     Expected arguments:
         --fb-token: Facebook access token (required)
+        --facebook-ads-ad-account-id: Facebook Ad Account ID with act_ prefix (optional)
         --pixel-id: Meta Pixel ID (optional)
         --page-id: Facebook Page ID (optional)
         --instagram-user-id: Instagram User ID (optional)
@@ -60,17 +66,20 @@ def init_config_from_args():
         return None
 
     _CONFIG['access_token'] = get_arg('--fb-token', required=True)
+    _CONFIG['act_id'] = get_arg('--facebook-ads-ad-account-id')
     _CONFIG['pixel_id'] = get_arg('--pixel-id')
     _CONFIG['page_id'] = get_arg('--page-id')
     _CONFIG['instagram_user_id'] = get_arg('--instagram-user-id')
     _CONFIG['catalog_id'] = get_arg('--catalog-id')
     _CONFIG['website_domain'] = get_arg('--website-domain')
 
-    print(f"✓ Facebook API configured (v{FB_API_VERSION})")
+    logger.info(f"✓ Facebook API configured (v{FB_API_VERSION})")
+    if _CONFIG['act_id']:
+        logger.info(f"✓ Ad Account ID: {_CONFIG['act_id']}")
     if _CONFIG['pixel_id']:
-        print(f"✓ Pixel ID: {_CONFIG['pixel_id']}")
+        logger.info(f"✓ Pixel ID: {_CONFIG['pixel_id']}")
     if _CONFIG['page_id']:
-        print(f"✓ Page ID: {_CONFIG['page_id']}")
+        logger.info(f"✓ Page ID: {_CONFIG['page_id']}")
 
 
 def get_access_token() -> str:
@@ -78,6 +87,11 @@ def get_access_token() -> str:
     if not _CONFIG['access_token']:
         raise ValueError("Access token not initialized. Call init_config_from_args() first.")
     return _CONFIG['access_token']
+
+
+def get_act_id() -> Optional[str]:
+    """Get the configured Facebook Ad Account ID."""
+    return _CONFIG['act_id']
 
 
 def get_pixel_id() -> Optional[str]:
@@ -132,10 +146,10 @@ async def _make_graph_api_call(url: str, params: Dict[str, Any]) -> Dict:
             k: "[REDACTED]" if any(s in k.lower() for s in ['token', 'secret', 'key']) else v
             for k, v in params.items()
         }
-        print(f"❌ Graph API GET error: {url} | Params: {safe_params} | Error: {e}")
+        logger.error(f"❌ Graph API GET error: {url} | Params: {safe_params} | Error: {e}")
         raise
     except httpx.RequestError as e:
-        print(f"❌ Request error: {url} | Error: {e}")
+        logger.error(f"❌ Request error: {url} | Error: {e}")
         raise
 
 

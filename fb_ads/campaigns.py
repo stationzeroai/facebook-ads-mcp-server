@@ -10,6 +10,7 @@ from typing import List, Optional, Dict, Any
 from .api import (
     FB_GRAPH_URL,
     get_access_token,
+    get_act_id,
     _make_graph_api_call,
     _make_graph_api_post,
     _prepare_params
@@ -25,8 +26,7 @@ async def create_cbo_campaign(
     buying_type: Optional[str] = "AUCTION",
     bid_strategy: Optional[str] = None,
     bid_amount: Optional[float] = None,
-    spend_cap: Optional[float] = None,
-    act_id: Optional[str] = None
+    spend_cap: Optional[float] = None
 ) -> str:
     """Create a new CBO (Campaign Budget Optimization) campaign in a Meta Ads account.
 
@@ -45,19 +45,21 @@ async def create_cbo_campaign(
         bid_strategy (str): Bid strategy. Options: LOWEST_COST_WITHOUT_CAP (default), LOWEST_COST_WITH_BID_CAP, COST_CAP
         bid_amount (float): Bid amount in account currency (in cents). Required if bid_strategy is LOWEST_COST_WITH_BID_CAP or COST_CAP
         spend_cap (float): Spending limit for the campaign in account currency (in cents). Optional.
-        act_id (str): Ad account ID (with act_ prefix). Required.
 
     Returns:
         str: JSON string containing the created campaign details or error message.
     """
+    act_id = get_act_id()
+    if not act_id:
+        return json.dumps({
+            "error": "Ad account ID not configured. Set --facebook-ads-ad-account-id at server startup."
+        }, indent=2)
+
     if not name:
         return json.dumps({"error": "No campaign name provided"}, indent=2)
 
     if not objective:
         return json.dumps({"error": "No campaign objective provided"}, indent=2)
-
-    if not act_id:
-        return json.dumps({"error": "No ad account ID (act_id) provided"}, indent=2)
 
     # For CBO campaigns, either daily_budget or lifetime_budget is required
     if not daily_budget and not lifetime_budget:
@@ -110,8 +112,7 @@ async def create_abo_campaign(
     name: str,
     objective: str = "OUTCOME_SALES",
     status: str = "PAUSED",
-    buying_type: Optional[str] = "AUCTION",
-    act_id: Optional[str] = None
+    buying_type: Optional[str] = "AUCTION"
 ) -> str:
     """Create a new ABO (Ad Set Budget Optimization) campaign in a Meta Ads account.
 
@@ -129,19 +130,21 @@ async def create_abo_campaign(
             Default: OUTCOME_SALES
         status (str): Initial campaign status (default: PAUSED). Options: ACTIVE, PAUSED
         buying_type (str): Buying type (default: AUCTION)
-        act_id (str): Ad account ID (with act_ prefix). Required.
 
     Returns:
         str: JSON string containing the created campaign details or error message.
     """
+    act_id = get_act_id()
+    if not act_id:
+        return json.dumps({
+            "error": "Ad account ID not configured. Set --facebook-ads-ad-account-id at server startup."
+        }, indent=2)
+
     if not name:
         return json.dumps({"error": "No campaign name provided"}, indent=2)
 
     if not objective:
         return json.dumps({"error": "No campaign objective provided"}, indent=2)
-
-    if not act_id:
-        return json.dumps({"error": "No ad account ID (act_id) provided"}, indent=2)
 
     access_token = get_access_token()
     url = f"{FB_GRAPH_URL}/{act_id}/campaigns"
@@ -312,7 +315,6 @@ async def get_campaign_by_id(
 
 
 async def get_campaigns_by_adaccount(
-    act_id: str,
     fields: Optional[List[str]] = None,
     filtering: Optional[List[dict]] = None,
     limit: Optional[int] = 25,
@@ -335,8 +337,6 @@ async def get_campaigns_by_adaccount(
     various filtering options, pagination, and field selection.
 
     Args:
-        act_id (str): The ID of the ad account to retrieve campaigns from, prefixed with 'act_',
-                      e.g., 'act_1234567890'.
         fields (Optional[List[str]]): A list of specific fields to retrieve for each campaign.
         filtering (Optional[List[dict]]): Filter objects with 'field', 'operator', and 'value' keys.
         limit (Optional[int]): Maximum number of campaigns to return per page. Default is 25, max is 100.
@@ -360,13 +360,18 @@ async def get_campaigns_by_adaccount(
         ```python
         # Get active campaigns from an ad account
         campaigns = await get_campaigns_by_adaccount(
-            act_id="act_123456789",
             fields=["name", "objective", "effective_status"],
             effective_status=["ACTIVE"],
             limit=50
         )
         ```
     """
+    act_id = get_act_id()
+    if not act_id:
+        raise ValueError(
+            "Ad account ID not configured. Set --facebook-ads-ad-account-id at server startup."
+        )
+
     access_token = get_access_token()
     url = f"{FB_GRAPH_URL}/{act_id}/campaigns"
     params = {'access_token': access_token}

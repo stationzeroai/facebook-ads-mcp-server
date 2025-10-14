@@ -6,16 +6,16 @@ including catalog-based Dynamic Product Ads (DPA), media creatives, and Advantag
 """
 
 import json
-from typing import List, Optional, Dict, Any, Union
+from typing import List, Optional, Dict, Any
 from .api import (
     FB_GRAPH_URL,
     get_access_token,
+    get_act_id,
     get_page_id,
     get_instagram_user_id,
     get_catalog_id,
     _make_graph_api_call,
-    _make_graph_api_post,
-    _prepare_params
+    _make_graph_api_post
 )
 
 
@@ -23,9 +23,6 @@ async def create_catalog_creative(
     name: str,
     object_story_spec_link_data_message: str,
     product_set_id: Optional[str] = None,
-    act_id: Optional[str] = None,
-    page_id: Optional[str] = None,
-    instagram_user_id: Optional[str] = None,
     adv_image_template: Optional[str] = None,
     adv_text_optimizations: Optional[bool] = None,
     adv_image_crop: Optional[bool] = None,
@@ -44,9 +41,6 @@ async def create_catalog_creative(
         name (str): Creative name for identification
         object_story_spec_link_data_message (str): The main ad text/message
         product_set_id (str): Product set ID from your catalog. Optional if using adv_catalog_feed_spec.
-        act_id (str): Ad account ID (with act_ prefix). Required.
-        page_id (str): Facebook Page ID. If not provided, uses global config.
-        instagram_user_id (str): Instagram User ID for placements. If not provided, uses global config.
         adv_image_template (str): Advantage+ Image Template ID for AI-generated backgrounds.
             Example: "advantage_plus_creative_catalog_immersive_template"
         adv_text_optimizations (bool): Enable Advantage+ Text Optimizations (AI-generated variations)
@@ -72,25 +66,27 @@ async def create_catalog_creative(
             name="DPA Campaign - Summer Collection",
             object_story_spec_link_data_message="Check out our summer collection!",
             product_set_id="1234567890",
-            act_id="act_123456789",
             adv_text_optimizations=True,
             adv_image_crop=True,
             call_to_action_type="SHOP_NOW"
         )
         ```
     """
+    act_id = get_act_id()
+    if not act_id:
+        return json.dumps({
+            "error": "Ad account ID not configured. Set --facebook-ads-ad-account-id at server startup."
+        }, indent=2)
+
     if not name:
         return json.dumps({"error": "No creative name provided"}, indent=2)
 
     if not object_story_spec_link_data_message:
         return json.dumps({"error": "No message provided for the ad creative"}, indent=2)
 
-    if not act_id:
-        return json.dumps({"error": "No ad account ID (act_id) provided"}, indent=2)
-
-    # Use provided IDs or fall back to global config
-    page_id = page_id or get_page_id()
-    instagram_user_id = instagram_user_id or get_instagram_user_id()
+    # Use global config for page_id and instagram_user_id
+    page_id = get_page_id()
+    instagram_user_id = get_instagram_user_id()
 
     if not page_id:
         return json.dumps({"error": "No page_id provided or configured"}, indent=2)
@@ -194,8 +190,7 @@ async def create_ad_with_catalog_creative(
     adset_id: str,
     creative_id: str,
     name: str,
-    status: str = "PAUSED",
-    act_id: Optional[str] = None
+    status: str = "PAUSED"
 ) -> str:
     """Create a new ad using an existing catalog creative.
 
@@ -204,11 +199,16 @@ async def create_ad_with_catalog_creative(
         creative_id (str): The Creative ID to use for the ad
         name (str): Ad name for identification
         status (str): Initial ad status (default: PAUSED). Options: ACTIVE, PAUSED
-        act_id (str): Ad account ID (with act_ prefix). Required.
 
     Returns:
         str: JSON string containing the created ad details or error message.
     """
+    act_id = get_act_id()
+    if not act_id:
+        return json.dumps({
+            "error": "Ad account ID not configured. Set --facebook-ads-ad-account-id at server startup."
+        }, indent=2)
+
     if not adset_id:
         return json.dumps({"error": "No adset_id provided"}, indent=2)
 
@@ -217,9 +217,6 @@ async def create_ad_with_catalog_creative(
 
     if not name:
         return json.dumps({"error": "No ad name provided"}, indent=2)
-
-    if not act_id:
-        return json.dumps({"error": "No ad account ID (act_id) provided"}, indent=2)
 
     access_token = get_access_token()
     url = f"{FB_GRAPH_URL}/{act_id}/ads"
@@ -245,21 +242,19 @@ async def create_ad_with_catalog_creative(
 
 
 async def fetch_product_sets(
-    catalog_id: Optional[str] = None,
     fields: Optional[List[str]] = None,
     limit: Optional[int] = 25
 ) -> str:
     """Fetch product sets from a Meta product catalog.
 
     Args:
-        catalog_id (str): Product Catalog ID. If not provided, uses global config.
         fields (List[str]): Fields to retrieve. Default: ['id', 'name', 'product_count', 'filter']
         limit (int): Maximum number of product sets to return. Default: 25.
 
     Returns:
         str: JSON string containing product sets or error message.
     """
-    catalog_id = catalog_id or get_catalog_id()
+    catalog_id = get_catalog_id()
 
     if not catalog_id:
         return json.dumps({"error": "No catalog_id provided or configured"}, indent=2)
@@ -447,7 +442,6 @@ async def get_ad_by_id(
 
 
 async def get_ads_by_adaccount(
-    act_id: str,
     fields: Optional[List[str]] = None,
     filtering: Optional[List[dict]] = None,
     limit: Optional[int] = 25,
@@ -460,7 +454,6 @@ async def get_ads_by_adaccount(
     """Retrieves ads from a specific Facebook ad account.
 
     Args:
-        act_id (str): The ID of the ad account to retrieve ads from, prefixed with 'act_'.
         fields (Optional[List[str]]): A list of specific fields to retrieve for each ad.
         filtering (Optional[List[dict]]): Filter objects with 'field', 'operator', and 'value' keys.
         limit (Optional[int]): Maximum number of ads to return per page. Default is 25, max is 100.
@@ -473,8 +466,11 @@ async def get_ads_by_adaccount(
     Returns:
         str: JSON string containing the requested ads or error message.
     """
+    act_id = get_act_id()
     if not act_id:
-        return json.dumps({"error": "No ad account ID (act_id) provided"}, indent=2)
+        return json.dumps({
+            "error": "Ad account ID not configured. Set --facebook-ads-ad-account-id at server startup."
+        }, indent=2)
 
     access_token = get_access_token()
     url = f"{FB_GRAPH_URL}/{act_id}/ads"

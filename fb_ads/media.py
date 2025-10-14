@@ -203,9 +203,7 @@ async def _create_single_image_creative(
     image_hash: str,
     message: str,
     link: str,
-    call_to_action_type: str = "LEARN_MORE",
-    page_id: Optional[str] = None,
-    instagram_user_id: Optional[str] = None
+    call_to_action_type: str = "LEARN_MORE"
 ) -> Dict[str, Any]:
     """Create a single image ad creative.
 
@@ -216,14 +214,12 @@ async def _create_single_image_creative(
         message (str): Ad text/message
         link (str): Destination URL
         call_to_action_type (str): CTA button type. Default: "LEARN_MORE"
-        page_id (str): Facebook Page ID. If not provided, uses global config.
-        instagram_user_id (str): Instagram User ID. If not provided, uses global config.
 
     Returns:
         Dict: Created creative details
     """
-    page_id = page_id or get_page_id()
-    instagram_user_id = instagram_user_id or get_instagram_user_id()
+    page_id = get_page_id()
+    instagram_user_id = get_instagram_user_id()
 
     if not page_id:
         raise ValueError("No page_id provided or configured")
@@ -260,9 +256,7 @@ async def _create_carousel_creative(
     name: str,
     cards: List[Dict[str, Any]],
     message: str,
-    link: str,
-    page_id: Optional[str] = None,
-    instagram_user_id: Optional[str] = None
+    link: str
 ) -> Dict[str, Any]:
     """Create a carousel ad creative with multiple cards.
 
@@ -277,8 +271,6 @@ async def _create_carousel_creative(
             - 'call_to_action' (optional): Dict with 'type' key
         message (str): Main ad text/message
         link (str): Default destination URL
-        page_id (str): Facebook Page ID. If not provided, uses global config.
-        instagram_user_id (str): Instagram User ID. If not provided, uses global config.
 
     Returns:
         Dict: Created creative details
@@ -308,8 +300,8 @@ async def _create_carousel_creative(
         )
         ```
     """
-    page_id = page_id or get_page_id()
-    instagram_user_id = instagram_user_id or get_instagram_user_id()
+    page_id = get_page_id()
+    instagram_user_id = get_instagram_user_id()
 
     if not page_id:
         raise ValueError("No page_id provided or configured")
@@ -379,8 +371,6 @@ async def _create_video_creative(
     message: str,
     link: Optional[str] = None,
     call_to_action_type: str = "LEARN_MORE",
-    page_id: Optional[str] = None,
-    instagram_user_id: Optional[str] = None,
     thumbnail_url: Optional[str] = None
 ) -> Dict[str, Any]:
     """Create a video ad creative.
@@ -392,15 +382,13 @@ async def _create_video_creative(
         message (str): Ad text/message
         link (str): Destination URL. Optional for video ads.
         call_to_action_type (str): CTA button type. Default: "LEARN_MORE"
-        page_id (str): Facebook Page ID. If not provided, uses global config.
-        instagram_user_id (str): Instagram User ID. If not provided, uses global config.
         thumbnail_url (str): Custom thumbnail URL. Optional.
 
     Returns:
         Dict: Created creative details
     """
-    page_id = page_id or get_page_id()
-    instagram_user_id = instagram_user_id or get_instagram_user_id()
+    page_id = get_page_id()
+    instagram_user_id = get_instagram_user_id()
 
     if not page_id:
         raise ValueError("No page_id provided or configured")

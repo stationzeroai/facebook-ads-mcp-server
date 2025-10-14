@@ -10,6 +10,7 @@ from typing import List, Optional
 from .api import (
     FB_GRAPH_URL,
     get_access_token,
+    get_act_id,
     _make_graph_api_call
 )
 
@@ -201,7 +202,6 @@ async def get_region_key_for_adsets(
 
 
 async def list_pixels(
-    act_id: str,
     fields: Optional[List[str]] = None,
     limit: Optional[int] = 25
 ) -> str:
@@ -211,7 +211,6 @@ async def list_pixels(
     Pixels are used for conversion tracking and audience building.
 
     Args:
-        act_id (str): Ad account ID (with act_ prefix). Required.
         fields (Optional[List[str]]): Fields to retrieve. Default: ['id', 'name', 'code', 'is_created_by_business']
             Available fields include:
             - 'id': Pixel ID
@@ -230,7 +229,6 @@ async def list_pixels(
     Example:
         ```python
         pixels = await list_pixels(
-            act_id="act_123456789",
             fields=["id", "name", "last_fired_time"],
             limit=10
         )
@@ -246,8 +244,11 @@ async def list_pixels(
         # }
         ```
     """
+    act_id = get_act_id()
     if not act_id:
-        return json.dumps({"error": "No ad account ID (act_id) provided"}, indent=2)
+        return json.dumps({
+            "error": "Ad account ID not configured. Set --facebook-ads-ad-account-id at server startup."
+        }, indent=2)
 
     access_token = get_access_token()
     url = f"{FB_GRAPH_URL}/{act_id}/adspixels"

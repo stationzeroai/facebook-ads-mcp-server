@@ -10,13 +10,13 @@ from typing import List, Optional, Dict, Any
 from .api import (
     FB_GRAPH_URL,
     get_access_token,
+    get_act_id,
     _make_graph_api_call,
     _build_insights_params
 )
 
 
 async def fetch_campaigns_by_name(
-    act_id: str,
     name_query: str,
     fields: Optional[List[str]] = None,
     include_insights: bool = True,
@@ -30,7 +30,6 @@ async def fetch_campaigns_by_name(
     and can automatically fetch performance metrics for matched campaigns.
 
     Args:
-        act_id (str): Ad account ID (with act_ prefix)
         name_query (str): Search term to match in campaign names (case-insensitive)
         fields (Optional[List[str]]): Campaign fields to retrieve. Default:
             ['id', 'name', 'objective', 'status', 'effective_status', 'daily_budget', 'lifetime_budget']
@@ -47,7 +46,6 @@ async def fetch_campaigns_by_name(
     Example:
         ```python
         result = await fetch_campaigns_by_name(
-            act_id="act_123456789",
             name_query="summer",
             include_insights=True,
             date_preset="last_7d"
@@ -55,8 +53,11 @@ async def fetch_campaigns_by_name(
         # Returns campaigns with "summer" in the name plus their last 7 days performance
         ```
     """
+    act_id = get_act_id()
     if not act_id:
-        return json.dumps({"error": "No ad account ID (act_id) provided"}, indent=2)
+        return json.dumps({
+            "error": "Ad account ID not configured. Set --facebook-ads-ad-account-id at server startup."
+        }, indent=2)
 
     if not name_query:
         return json.dumps({"error": "No name query provided"}, indent=2)
@@ -138,7 +139,6 @@ async def fetch_campaigns_by_name(
 
 
 async def fetch_adsets_by_name(
-    act_id: str,
     name_query: str,
     fields: Optional[List[str]] = None,
     include_insights: bool = True,
@@ -152,7 +152,6 @@ async def fetch_adsets_by_name(
     and can automatically fetch performance metrics for matched ad sets.
 
     Args:
-        act_id (str): Ad account ID (with act_ prefix)
         name_query (str): Search term to match in ad set names (case-insensitive)
         fields (Optional[List[str]]): Ad set fields to retrieve. Default:
             ['id', 'name', 'campaign_id', 'status', 'effective_status', 'daily_budget', 'lifetime_budget', 'optimization_goal']
@@ -168,7 +167,6 @@ async def fetch_adsets_by_name(
     Example:
         ```python
         result = await fetch_adsets_by_name(
-            act_id="act_123456789",
             name_query="premium",
             include_insights=True,
             date_preset="last_7d"
@@ -176,8 +174,11 @@ async def fetch_adsets_by_name(
         # Returns ad sets with "premium" in the name plus their last 7 days performance
         ```
     """
+    act_id = get_act_id()
     if not act_id:
-        return json.dumps({"error": "No ad account ID (act_id) provided"}, indent=2)
+        return json.dumps({
+            "error": "Ad account ID not configured. Set --facebook-ads-ad-account-id at server startup."
+        }, indent=2)
 
     if not name_query:
         return json.dumps({"error": "No name query provided"}, indent=2)
@@ -260,7 +261,6 @@ async def fetch_adsets_by_name(
 
 
 async def fetch_objects_by_name(
-    act_id: str,
     name_query: str,
     object_types: Optional[List[str]] = None,
     include_insights: bool = True,
@@ -274,7 +274,6 @@ async def fetch_objects_by_name(
     all matching results with optional performance insights.
 
     Args:
-        act_id (str): Ad account ID (with act_ prefix)
         name_query (str): Search term to match in object names (case-insensitive)
         object_types (Optional[List[str]]): Types of objects to search. Default: ['campaigns', 'adsets', 'ads']
             Options: 'campaigns', 'adsets', 'ads'
@@ -290,7 +289,6 @@ async def fetch_objects_by_name(
     Example:
         ```python
         result = await fetch_objects_by_name(
-            act_id="act_123456789",
             name_query="black friday",
             object_types=["campaigns", "adsets"],
             include_insights=True,
@@ -299,8 +297,11 @@ async def fetch_objects_by_name(
         # Returns all campaigns and ad sets with "black friday" in the name plus their performance
         ```
     """
+    act_id = get_act_id()
     if not act_id:
-        return json.dumps({"error": "No ad account ID (act_id) provided"}, indent=2)
+        return json.dumps({
+            "error": "Ad account ID not configured. Set --facebook-ads-ad-account-id at server startup."
+        }, indent=2)
 
     if not name_query:
         return json.dumps({"error": "No name query provided"}, indent=2)

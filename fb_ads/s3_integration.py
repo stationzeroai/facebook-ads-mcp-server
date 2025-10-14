@@ -10,7 +10,7 @@ import os
 import tempfile
 from typing import Optional, List, Dict, Any
 from urllib.parse import urlparse
-from .api import get_access_token, get_page_id, get_instagram_user_id
+from .api import get_access_token, get_act_id, get_page_id, get_instagram_user_id
 from .media import (
     _upload_image_to_facebook,
     _upload_video_to_facebook,
@@ -184,11 +184,8 @@ async def create_ad_with_media_creative_from_s3_folder_link(
     creative_name: str,
     message: str,
     link: str,
-    act_id: str,
     call_to_action_type: str = "LEARN_MORE",
     creative_type: str = "auto",
-    page_id: Optional[str] = None,
-    instagram_user_id: Optional[str] = None,
     aws_access_key_id: Optional[str] = None,
     aws_secret_access_key: Optional[str] = None,
     aws_region: Optional[str] = None,
@@ -211,15 +208,12 @@ async def create_ad_with_media_creative_from_s3_folder_link(
         creative_name (str): Name for the creative
         message (str): Ad text/message
         link (str): Destination URL
-        act_id (str): Ad account ID (with act_ prefix)
         call_to_action_type (str): CTA button type. Default: "LEARN_MORE"
         creative_type (str): Type of creative to create. Options:
             - "auto": Automatically detect based on files (default)
             - "single_image": Force single image creative (uses first image)
             - "carousel": Force carousel creative (multiple images)
             - "video": Force video creative (uses first video)
-        page_id (str): Facebook Page ID. If not provided, uses global config.
-        instagram_user_id (str): Instagram User ID. If not provided, uses global config.
         aws_access_key_id (str): AWS Access Key ID. Optional if using IAM role.
         aws_secret_access_key (str): AWS Secret Access Key. Optional if using IAM role.
         aws_region (str): AWS region. Default: us-east-1
@@ -237,11 +231,16 @@ async def create_ad_with_media_creative_from_s3_folder_link(
             creative_name="Summer Sale Creative",
             message="Check out our summer collection!",
             link="https://example.com/summer-sale",
-            act_id="act_123456789",
             call_to_action_type="SHOP_NOW"
         )
         ```
     """
+    act_id = get_act_id()
+    if not act_id:
+        return json.dumps({
+            "error": "Ad account ID not configured. Set --facebook-ads-ad-account-id at server startup."
+        }, indent=2)
+
     if not BOTO3_AVAILABLE:
         return json.dumps({
             "error": "boto3 is not installed. Install it with: pip install boto3"
@@ -318,9 +317,7 @@ async def create_ad_with_media_creative_from_s3_folder_link(
                     video_id=video_result['id'],
                     message=message,
                     link=link,
-                    call_to_action_type=call_to_action_type,
-                    page_id=page_id,
-                    instagram_user_id=instagram_user_id
+                    call_to_action_type=call_to_action_type
                 )
 
             elif creative_type == "carousel":
@@ -359,9 +356,7 @@ async def create_ad_with_media_creative_from_s3_folder_link(
                     name=creative_name,
                     cards=cards,
                     message=message,
-                    link=link,
-                    page_id=page_id,
-                    instagram_user_id=instagram_user_id
+                    link=link
                 )
 
             else:  # single_image
@@ -391,9 +386,7 @@ async def create_ad_with_media_creative_from_s3_folder_link(
                     image_hash=image_result['hash'],
                     message=message,
                     link=link,
-                    call_to_action_type=call_to_action_type,
-                    page_id=page_id,
-                    instagram_user_id=instagram_user_id
+                    call_to_action_type=call_to_action_type
                 )
 
             # Create the ad
@@ -401,8 +394,7 @@ async def create_ad_with_media_creative_from_s3_folder_link(
                 adset_id=adset_id,
                 creative_id=creative_result['id'],
                 name=ad_name,
-                status=status,
-                act_id=act_id
+                status=status
             )
 
             return json.dumps({

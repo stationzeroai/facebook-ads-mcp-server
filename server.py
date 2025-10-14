@@ -39,8 +39,7 @@ async def facebook_create_cbo_campaign(
     buying_type: Optional[str] = "AUCTION",
     bid_strategy: Optional[str] = None,
     bid_amount: Optional[float] = None,
-    spend_cap: Optional[float] = None,
-    act_id: Optional[str] = None
+    spend_cap: Optional[float] = None
 ) -> str:
     """Create a new CBO (Campaign Budget Optimization) campaign in a Meta Ads account.
 
@@ -59,14 +58,13 @@ async def facebook_create_cbo_campaign(
         bid_strategy (str): Bid strategy. Options: LOWEST_COST_WITHOUT_CAP (default), LOWEST_COST_WITH_BID_CAP, COST_CAP
         bid_amount (float): Bid amount in account currency (in cents). Required if bid_strategy is LOWEST_COST_WITH_BID_CAP or COST_CAP
         spend_cap (float): Spending limit for the campaign in account currency (in cents). Optional.
-        act_id (str): Ad account ID (with act_ prefix). Required.
 
     Returns:
         str: JSON string containing the created campaign details or error message.
     """
     return await campaigns.create_cbo_campaign(
         name, objective, status, daily_budget, lifetime_budget,
-        buying_type, bid_strategy, bid_amount, spend_cap, act_id
+        buying_type, bid_strategy, bid_amount, spend_cap
     )
 
 
@@ -75,8 +73,7 @@ async def facebook_create_abo_campaign(
     name: str,
     objective: str = "OUTCOME_SALES",
     status: str = "PAUSED",
-    buying_type: Optional[str] = "AUCTION",
-    act_id: Optional[str] = None
+    buying_type: Optional[str] = "AUCTION"
 ) -> str:
     """Create a new ABO (Ad Set Budget Optimization) campaign in a Meta Ads account.
 
@@ -94,13 +91,12 @@ async def facebook_create_abo_campaign(
             Default: OUTCOME_SALES
         status (str): Initial campaign status (default: PAUSED). Options: ACTIVE, PAUSED
         buying_type (str): Buying type (default: AUCTION)
-        act_id (str): Ad account ID (with act_ prefix). Required.
 
     Returns:
         str: JSON string containing the created campaign details or error message.
     """
     return await campaigns.create_abo_campaign(
-        name, objective, status, buying_type, act_id
+        name, objective, status, buying_type
     )
 
 
@@ -171,7 +167,6 @@ async def facebook_get_campaign_by_id(
 
 @mcp.tool()
 async def facebook_get_campaigns_by_adaccount(
-    act_id: str,
     fields: Optional[List[str]] = None,
     filtering: Optional[List[dict]] = None,
     limit: Optional[int] = 25,
@@ -191,7 +186,6 @@ async def facebook_get_campaigns_by_adaccount(
     """Retrieves campaigns from a specific Facebook ad account.
 
     Args:
-        act_id (str): The ID of the ad account to retrieve campaigns from, prefixed with 'act_'.
         fields (Optional[List[str]]): A list of specific fields to retrieve for each campaign.
         filtering (Optional[List[dict]]): Filter objects with 'field', 'operator', and 'value' keys.
         limit (Optional[int]): Maximum number of campaigns to return per page. Default is 25, max is 100.
@@ -212,7 +206,7 @@ async def facebook_get_campaigns_by_adaccount(
         Dict: A dictionary containing the requested campaigns in 'data' list with pagination info.
     """
     return await campaigns.get_campaigns_by_adaccount(
-        act_id, fields, filtering, limit, after, before, date_preset,
+        fields, filtering, limit, after, before, date_preset,
         time_range, updated_since, effective_status, is_completed,
         special_ad_categories, objective, buyer_guarantee_agreement_status,
         date_format, include_drafts
@@ -229,7 +223,6 @@ async def facebook_create_adset(
     name: str,
     optimization_goal: str,
     billing_event: str,
-    act_id: str,
     custom_event_type: Optional[str] = None,
     status: str = "PAUSED",
     daily_budget: Optional[str] = None,
@@ -256,7 +249,6 @@ async def facebook_create_adset(
             IMPRESSIONS, REACH, etc.
         billing_event (str): What you're charged for. Common values:
             IMPRESSIONS, LINK_CLICKS, POST_ENGAGEMENT
-        act_id (str): Ad account ID (with act_ prefix)
         custom_event_type (str): Required for OFFSITE_CONVERSIONS. Options:
             PURCHASE, ADD_TO_CART, LEAD, COMPLETE_REGISTRATION, etc.
         status (str): Initial status (default: PAUSED). Options: ACTIVE, PAUSED
@@ -276,7 +268,7 @@ async def facebook_create_adset(
         str: JSON string containing the created ad set details or error message.
     """
     return await adsets.create_adset(
-        campaign_id, name, optimization_goal, billing_event, act_id,
+        campaign_id, name, optimization_goal, billing_event,
         custom_event_type, status, daily_budget, lifetime_budget, targeting,
         start_time, end_time, bid_strategy, bid_cap, roas_average_floor,
         frequency_control_specs, promoted_object
@@ -359,7 +351,6 @@ async def facebook_get_adsets_by_ids(
 
 @mcp.tool()
 async def facebook_get_adsets_by_adaccount(
-    act_id: str,
     fields: Optional[List[str]] = None,
     filtering: Optional[List[dict]] = None,
     limit: Optional[int] = 25,
@@ -374,7 +365,6 @@ async def facebook_get_adsets_by_adaccount(
     """Retrieves ad sets from a specific Facebook ad account.
 
     Args:
-        act_id (str): The ID of the ad account to retrieve ad sets from.
         fields (Optional[List[str]]): A list of specific fields to retrieve.
         filtering (Optional[List[dict]]): Filter objects.
         limit (Optional[int]): Maximum number of ad sets to return per page.
@@ -390,7 +380,7 @@ async def facebook_get_adsets_by_adaccount(
         str: JSON string containing the requested ad sets or error message.
     """
     return await adsets.get_adsets_by_adaccount(
-        act_id, fields, filtering, limit, after, before, date_preset,
+        fields, filtering, limit, after, before, date_preset,
         time_range, updated_since, effective_status, date_format
     )
 
@@ -436,9 +426,6 @@ async def facebook_create_catalog_creative(
     name: str,
     object_story_spec_link_data_message: str,
     product_set_id: Optional[str] = None,
-    act_id: Optional[str] = None,
-    page_id: Optional[str] = None,
-    instagram_user_id: Optional[str] = None,
     adv_image_template: Optional[str] = None,
     adv_text_optimizations: Optional[bool] = None,
     adv_image_crop: Optional[bool] = None,
@@ -454,9 +441,6 @@ async def facebook_create_catalog_creative(
         name (str): Creative name for identification
         object_story_spec_link_data_message (str): The main ad text/message
         product_set_id (str): Product set ID from your catalog.
-        act_id (str): Ad account ID (with act_ prefix). Required.
-        page_id (str): Facebook Page ID. If not provided, uses global config.
-        instagram_user_id (str): Instagram User ID for placements.
         adv_image_template (str): Advantage+ Image Template ID.
         adv_text_optimizations (bool): Enable Advantage+ Text Optimizations.
         adv_image_crop (bool): Enable Advantage+ Image Cropping.
@@ -470,8 +454,8 @@ async def facebook_create_catalog_creative(
         str: JSON string containing the created creative details or error message.
     """
     return await ads.create_catalog_creative(
-        name, object_story_spec_link_data_message, product_set_id, act_id,
-        page_id, instagram_user_id, adv_image_template, adv_text_optimizations,
+        name, object_story_spec_link_data_message, product_set_id,
+        adv_image_template, adv_text_optimizations,
         adv_image_crop, adv_video_crop, adv_composite_media,
         adv_catalog_feed_spec, call_to_action_type, link
     )
@@ -482,8 +466,7 @@ async def facebook_create_ad_with_catalog_creative(
     adset_id: str,
     creative_id: str,
     name: str,
-    status: str = "PAUSED",
-    act_id: Optional[str] = None
+    status: str = "PAUSED"
 ) -> str:
     """Create a new ad using an existing catalog creative.
 
@@ -492,33 +475,30 @@ async def facebook_create_ad_with_catalog_creative(
         creative_id (str): The Creative ID to use for the ad
         name (str): Ad name for identification
         status (str): Initial ad status (default: PAUSED). Options: ACTIVE, PAUSED
-        act_id (str): Ad account ID (with act_ prefix). Required.
 
     Returns:
         str: JSON string containing the created ad details or error message.
     """
     return await ads.create_ad_with_catalog_creative(
-        adset_id, creative_id, name, status, act_id
+        adset_id, creative_id, name, status
     )
 
 
 @mcp.tool()
 async def facebook_fetch_product_sets(
-    catalog_id: Optional[str] = None,
     fields: Optional[List[str]] = None,
     limit: Optional[int] = 25
 ) -> str:
     """Fetch product sets from a Meta product catalog.
 
     Args:
-        catalog_id (str): Product Catalog ID. If not provided, uses global config.
         fields (List[str]): Fields to retrieve. Default: ['id', 'name', 'product_count', 'filter']
         limit (int): Maximum number of product sets to return. Default: 25.
 
     Returns:
         str: JSON string containing product sets or error message.
     """
-    return await ads.fetch_product_sets(catalog_id, fields, limit)
+    return await ads.fetch_product_sets(fields, limit)
 
 
 @mcp.tool()
@@ -582,7 +562,6 @@ async def facebook_get_ad_by_id(
 
 @mcp.tool()
 async def facebook_get_ads_by_adaccount(
-    act_id: str,
     fields: Optional[List[str]] = None,
     filtering: Optional[List[dict]] = None,
     limit: Optional[int] = 25,
@@ -595,7 +574,6 @@ async def facebook_get_ads_by_adaccount(
     """Retrieves ads from a specific Facebook ad account.
 
     Args:
-        act_id (str): The ID of the ad account to retrieve ads from.
         fields (Optional[List[str]]): A list of specific fields to retrieve.
         filtering (Optional[List[dict]]): Filter objects.
         limit (Optional[int]): Maximum number of ads to return per page.
@@ -609,7 +587,7 @@ async def facebook_get_ads_by_adaccount(
         str: JSON string containing the requested ads or error message.
     """
     return await ads.get_ads_by_adaccount(
-        act_id, fields, filtering, limit, after, before,
+        fields, filtering, limit, after, before,
         effective_status, updated_since, date_format
     )
 
@@ -743,21 +721,19 @@ async def facebook_get_region_key_for_adsets(
 
 @mcp.tool()
 async def facebook_list_pixels(
-    act_id: str,
     fields: Optional[List[str]] = None,
     limit: Optional[int] = 25
 ) -> str:
     """List all Meta Pixels associated with an ad account.
 
     Args:
-        act_id (str): Ad account ID (with act_ prefix). Required.
         fields (Optional[List[str]]): Fields to retrieve.
         limit (Optional[int]): Maximum number of pixels to return. Default: 25.
 
     Returns:
         str: JSON string containing pixel information or error message.
     """
-    return await meta_utils.list_pixels(act_id, fields, limit)
+    return await meta_utils.list_pixels(fields, limit)
 
 
 # ==============================================================================
@@ -766,7 +742,6 @@ async def facebook_list_pixels(
 
 @mcp.tool()
 async def facebook_fetch_campaigns_by_name(
-    act_id: str,
     name_query: str,
     fields: Optional[List[str]] = None,
     include_insights: bool = True,
@@ -777,7 +752,6 @@ async def facebook_fetch_campaigns_by_name(
     """Search for campaigns by name and optionally include performance insights.
 
     Args:
-        act_id (str): Ad account ID (with act_ prefix)
         name_query (str): Search term to match in campaign names (case-insensitive)
         fields (Optional[List[str]]): Campaign fields to retrieve.
         include_insights (bool): If True, includes performance insights. Default: True
@@ -789,14 +763,13 @@ async def facebook_fetch_campaigns_by_name(
         str: JSON string containing matched campaigns with optional insights.
     """
     return await queries.fetch_campaigns_by_name(
-        act_id, name_query, fields, include_insights,
+        name_query, fields, include_insights,
         date_preset, insights_fields, limit
     )
 
 
 @mcp.tool()
 async def facebook_fetch_adsets_by_name(
-    act_id: str,
     name_query: str,
     fields: Optional[List[str]] = None,
     include_insights: bool = True,
@@ -807,7 +780,6 @@ async def facebook_fetch_adsets_by_name(
     """Search for ad sets by name and optionally include performance insights.
 
     Args:
-        act_id (str): Ad account ID (with act_ prefix)
         name_query (str): Search term to match in ad set names (case-insensitive)
         fields (Optional[List[str]]): Ad set fields to retrieve.
         include_insights (bool): If True, includes performance insights. Default: True
@@ -819,14 +791,13 @@ async def facebook_fetch_adsets_by_name(
         str: JSON string containing matched ad sets with optional insights.
     """
     return await queries.fetch_adsets_by_name(
-        act_id, name_query, fields, include_insights,
+        name_query, fields, include_insights,
         date_preset, insights_fields, limit
     )
 
 
 @mcp.tool()
 async def facebook_fetch_objects_by_name(
-    act_id: str,
     name_query: str,
     object_types: Optional[List[str]] = None,
     include_insights: bool = True,
@@ -837,7 +808,6 @@ async def facebook_fetch_objects_by_name(
     """Universal search for campaigns, ad sets, and ads by name with insights.
 
     Args:
-        act_id (str): Ad account ID (with act_ prefix)
         name_query (str): Search term to match in object names (case-insensitive)
         object_types (Optional[List[str]]): Types of objects to search. Default: ['campaigns', 'adsets', 'ads']
         include_insights (bool): If True, includes performance insights. Default: True
@@ -849,7 +819,7 @@ async def facebook_fetch_objects_by_name(
         str: JSON string containing all matched objects organized by type with optional insights.
     """
     return await queries.fetch_objects_by_name(
-        act_id, name_query, object_types, include_insights,
+        name_query, object_types, include_insights,
         date_preset, insights_fields, limit
     )
 
@@ -860,7 +830,6 @@ async def facebook_fetch_objects_by_name(
 
 @mcp.tool()
 async def facebook_get_adaccount_insights(
-    act_id: str,
     fields: Optional[List[str]] = None,
     date_preset: str = 'last_30d',
     time_range: Optional[Dict[str, str]] = None,
@@ -887,7 +856,6 @@ async def facebook_get_adaccount_insights(
     """Retrieves performance insights for a specified Facebook ad account.
 
     Args:
-        act_id (str): The target ad account ID, prefixed with 'act_'.
         fields (Optional[List[str]]): List of specific metrics to retrieve.
         date_preset (str): Predefined relative time range. Default: 'last_30d'.
         time_range (Optional[Dict[str, str]]): Specific time range.
@@ -915,7 +883,7 @@ async def facebook_get_adaccount_insights(
         Dict: Dictionary containing requested ad account insights.
     """
     return await insights.get_adaccount_insights(
-        act_id, fields, date_preset, time_range, time_ranges,
+        fields, date_preset, time_range, time_ranges,
         time_increment, level, action_attribution_windows,
         action_breakdowns, action_report_time, breakdowns,
         default_summary, use_account_attribution_setting,
@@ -1147,11 +1115,8 @@ async def facebook_create_ad_with_media_creative_from_s3_folder_link(
     creative_name: str,
     message: str,
     link: str,
-    act_id: str,
     call_to_action_type: str = "LEARN_MORE",
     creative_type: str = "auto",
-    page_id: Optional[str] = None,
-    instagram_user_id: Optional[str] = None,
     aws_access_key_id: Optional[str] = None,
     aws_secret_access_key: Optional[str] = None,
     aws_region: Optional[str] = None,
@@ -1173,11 +1138,8 @@ async def facebook_create_ad_with_media_creative_from_s3_folder_link(
         creative_name (str): Name for the creative
         message (str): Ad text/message
         link (str): Destination URL
-        act_id (str): Ad account ID (with act_ prefix)
         call_to_action_type (str): CTA button type. Default: "LEARN_MORE"
         creative_type (str): Type of creative. Options: "auto", "single_image", "carousel", "video". Default: "auto"
-        page_id (str): Facebook Page ID.
-        instagram_user_id (str): Instagram User ID.
         aws_access_key_id (str): AWS Access Key ID.
         aws_secret_access_key (str): AWS Secret Access Key.
         aws_region (str): AWS region.
@@ -1188,7 +1150,7 @@ async def facebook_create_ad_with_media_creative_from_s3_folder_link(
     """
     return await s3_integration.create_ad_with_media_creative_from_s3_folder_link(
         s3_folder_url, adset_id, ad_name, creative_name, message, link,
-        act_id, call_to_action_type, creative_type, page_id,
-        instagram_user_id, aws_access_key_id, aws_secret_access_key,
+        call_to_action_type, creative_type,
+        aws_access_key_id, aws_secret_access_key,
         aws_region, status
     )

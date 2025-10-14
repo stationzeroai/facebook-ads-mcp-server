@@ -10,6 +10,7 @@ from typing import List, Optional, Dict, Any, Union
 from .api import (
     FB_GRAPH_URL,
     get_access_token,
+    get_act_id,
     get_pixel_id,
     get_website_domain,
     _make_graph_api_call,
@@ -38,7 +39,6 @@ async def create_adset(
     name: str,
     optimization_goal: str,
     billing_event: str,
-    act_id: str,
     custom_event_type: Optional[str] = None,
     status: str = "PAUSED",
     daily_budget: Optional[str] = None,
@@ -92,7 +92,6 @@ async def create_adset(
         name (str): Human-readable ad set name
         optimization_goal (str): Optimization goal (must match campaign objective)
         billing_event (str): What you pay for (must match optimization_goal)
-        act_id (str): Ad account ID (with act_ prefix)
         custom_event_type (str): Required for conversion goals. Options: PURCHASE, VIEW_CONTENT, ADD_TO_CART, ADD_TO_WISHLIST, INITIATE_CHECKOUT, SUBSCRIBE, START_TRIAL
         status (str): Initial delivery status (default: PAUSED). Options: ACTIVE, PAUSED
         daily_budget (str): Daily budget in cents (for ABO campaigns only)
@@ -145,7 +144,6 @@ async def create_adset(
         adset = await create_adset(
             campaign_id="120123456",
             name="Women 25-34 • BR • Futebol",
-            act_id="act_123456789",
             daily_budget="5000",
             optimization_goal="OFFSITE_CONVERSIONS",
             billing_event="IMPRESSIONS",
@@ -162,9 +160,15 @@ async def create_adset(
         )
         ```
     """
+    act_id = get_act_id()
+    if not act_id:
+        return json.dumps({
+            "error": "Ad account ID not configured. Set --facebook-ads-ad-account-id at server startup."
+        }, indent=2)
+
     # Validate required parameters
-    if not all([act_id, campaign_id, name]):
-        return json.dumps({"error": "act_id, campaign_id, and name are required"}, indent=2)
+    if not all([campaign_id, name]):
+        return json.dumps({"error": "campaign_id and name are required"}, indent=2)
 
     if not optimization_goal or not billing_event:
         return json.dumps({"error": "optimization_goal and billing_event are required"}, indent=2)
@@ -460,7 +464,6 @@ async def get_adsets_by_ids(
 
 
 async def get_adsets_by_adaccount(
-    act_id: str,
     fields: Optional[List[str]] = None,
     filtering: Optional[List[dict]] = None,
     limit: Optional[int] = 25,
@@ -475,7 +478,6 @@ async def get_adsets_by_adaccount(
     """Retrieves ad sets from a specific Facebook ad account.
 
     Args:
-        act_id (str): Ad account ID (with act_ prefix)
         fields (Optional[List[str]]): Specific fields to retrieve
         filtering (Optional[List[dict]]): Filter objects with 'field', 'operator', 'value'
         limit (Optional[int]): Maximum ad sets per page (default: 25, max: 100)
@@ -493,13 +495,18 @@ async def get_adsets_by_adaccount(
     Example:
         ```python
         adsets = await get_adsets_by_adaccount(
-            act_id="act_123456789",
             fields=["name", "campaign_id", "effective_status", "daily_budget"],
             effective_status=["ACTIVE"],
             limit=50
         )
         ```
     """
+    act_id = get_act_id()
+    if not act_id:
+        raise ValueError(
+            "Ad account ID not configured. Set --facebook-ads-ad-account-id at server startup."
+        )
+
     access_token = get_access_token()
     url = f"{FB_GRAPH_URL}/{act_id}/adsets"
     params = {'access_token': access_token}
