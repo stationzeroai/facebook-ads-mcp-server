@@ -737,64 +737,8 @@ async def facebook_list_pixels(
 
 
 # ==============================================================================
-# SMART QUERY TOOLS (3 tools)
+# SMART QUERY TOOLS (1 tool)
 # ==============================================================================
-
-@mcp.tool()
-async def facebook_fetch_campaigns_by_name(
-    name_query: str,
-    fields: Optional[List[str]] = None,
-    include_insights: bool = True,
-    date_preset: Optional[str] = "last_30d",
-    insights_fields: Optional[List[str]] = None,
-    limit: Optional[int] = 25
-) -> str:
-    """Search for campaigns by name and optionally include performance insights.
-
-    Args:
-        name_query (str): Search term to match in campaign names (case-insensitive)
-        fields (Optional[List[str]]): Campaign fields to retrieve.
-        include_insights (bool): If True, includes performance insights. Default: True
-        date_preset (Optional[str]): Date preset for insights. Default: "last_30d"
-        insights_fields (Optional[List[str]]): Insights metrics to retrieve.
-        limit (Optional[int]): Maximum number of campaigns to return. Default: 25
-
-    Returns:
-        str: JSON string containing matched campaigns with optional insights.
-    """
-    return await queries.fetch_campaigns_by_name(
-        name_query, fields, include_insights,
-        date_preset, insights_fields, limit
-    )
-
-
-@mcp.tool()
-async def facebook_fetch_adsets_by_name(
-    name_query: str,
-    fields: Optional[List[str]] = None,
-    include_insights: bool = True,
-    date_preset: Optional[str] = "last_30d",
-    insights_fields: Optional[List[str]] = None,
-    limit: Optional[int] = 25
-) -> str:
-    """Search for ad sets by name and optionally include performance insights.
-
-    Args:
-        name_query (str): Search term to match in ad set names (case-insensitive)
-        fields (Optional[List[str]]): Ad set fields to retrieve.
-        include_insights (bool): If True, includes performance insights. Default: True
-        date_preset (Optional[str]): Date preset for insights. Default: "last_30d"
-        insights_fields (Optional[List[str]]): Insights metrics to retrieve.
-        limit (Optional[int]): Maximum number of ad sets to return. Default: 25
-
-    Returns:
-        str: JSON string containing matched ad sets with optional insights.
-    """
-    return await queries.fetch_adsets_by_name(
-        name_query, fields, include_insights,
-        date_preset, insights_fields, limit
-    )
-
 
 @mcp.tool()
 async def facebook_fetch_objects_by_name(

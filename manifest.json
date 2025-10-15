@@ -4,7 +4,7 @@
   "display_name": "Facebook Ads MCP Server",
   "version": "2.0.0",
   "description": "A comprehensive Python MCP server for Facebook Ads API with full CRUD operations",
-  "long_description": "This extension provides comprehensive Facebook Ads management capabilities through a Python MCP server with full CRUD operations. It enables programmatic access to create, read, update, and delete campaigns, ad sets, ads, and creatives. Features include Campaign Budget Optimization (CBO), Ad Set Budget Optimization (ABO), Dynamic Product Ads (DPA) with Advantage+ features, advanced targeting, S3 media integration, performance insights, and smart query tools. All 34 tools are prefixed with 'facebook_' to prevent namespace collisions when used alongside other MCP servers.",
+  "long_description": "This extension provides comprehensive Facebook Ads management capabilities through a Python MCP server with full CRUD operations. It enables programmatic access to create, read, update, and delete campaigns, ad sets, ads, and creatives. Features include Campaign Budget Optimization (CBO), Ad Set Budget Optimization (ABO), Dynamic Product Ads (DPA) with Advantage+ features, advanced targeting, S3 media integration, performance insights, and smart query tools. All 32 tools are prefixed with 'facebook_' to prevent namespace collisions when used alongside other MCP servers.",
   "author": {
     "name": "GoMarble AI",
     "email": "support@gomarble.ai",
@@ -138,14 +138,6 @@
     {
       "name": "facebook_list_pixels",
       "description": "List all Meta Pixels associated with an ad account"
-    },
-    {
-      "name": "facebook_fetch_campaigns_by_name",
-      "description": "Search campaigns by name with optional performance insights"
-    },
-    {
-      "name": "facebook_fetch_adsets_by_name",
-      "description": "Search ad sets by name with optional performance insights"
     },
     {
       "name": "facebook_fetch_objects_by_name",

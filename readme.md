@@ -11,7 +11,7 @@ A comprehensive Model Context Protocol (MCP) server providing **full CRUD operat
 
 ## 🚀 What's New in v2.0.0
 
-- **34 Tools** (up from 21) with `facebook_` prefix for namespace safety
+- **32 Tools** (up from 21) with `facebook_` prefix for namespace safety
 - **Full CRUD Operations**: Create, Read, Update, Delete campaigns, ad sets, and ads
 - **Campaign Budget Optimization (CBO)** and **Ad Set Budget Optimization (ABO)**
 - **Dynamic Product Ads (DPA)** with Advantage+ Creative features
@@ -40,12 +40,12 @@ For a simpler setup experience, we offer ready-to-use installers:
 ## 📋 Table of Contents
 
 - [Setup](#setup)
-- [34 Available Tools](#34-available-tools)
+- [32 Available Tools](#32-available-tools)
   - [Campaign Tools (6)](#campaign-tools-6)
   - [Ad Set Tools (6)](#ad-set-tools-6)
   - [Ad & Creative Tools (10)](#ad--creative-tools-10)
   - [Targeting & Utility Tools (3)](#targeting--utility-tools-3)
-  - [Smart Query Tools (3)](#smart-query-tools-3)
+  - [Smart Query Tools (1)](#smart-query-tools-1)
   - [Insights Tools (5)](#insights-tools-5)
   - [S3 Integration (1)](#s3-integration-1)
 - [Usage Examples](#usage-examples)
@@ -126,7 +126,7 @@ python server.py --fb-token YOUR_META_ACCESS_TOKEN
 
 ---
 
-## 34 Available Tools
+## 32 Available Tools
 
 All tools are prefixed with `facebook_` to prevent namespace collisions when used alongside other MCP servers (e.g., Google Ads).
 
@@ -175,12 +175,10 @@ All tools are prefixed with `facebook_` to prevent namespace collisions when use
 | `facebook_get_region_key_for_adsets` | Get region keys for geo-targeting (especially Brazilian states) |
 | `facebook_list_pixels` | List all Meta Pixels associated with an ad account |
 
-### Smart Query Tools (3)
+### Smart Query Tools (1)
 
 | Tool | Description |
 |------|-------------|
-| `facebook_fetch_campaigns_by_name` | Search campaigns by name with optional performance insights |
-| `facebook_fetch_adsets_by_name` | Search ad sets by name with optional performance insights |
 | `facebook_fetch_objects_by_name` | Universal search for campaigns, ad sets, and ads by name with insights |
 
 ### Insights Tools (5)
@@ -277,10 +275,10 @@ interests = await facebook_search_ad_interests(
 ### Example 3: Smart Query with Insights
 
 ```python
-# Find campaigns by name with last 7 days performance
-campaigns = await facebook_fetch_campaigns_by_name(
-    act_id="act_123456789",
+# Universal search for objects by name with last 7 days performance
+results = await facebook_fetch_objects_by_name(
     name_query="summer",
+    object_types=["campaigns", "adsets"],  # Optional, defaults to all types
     include_insights=True,
     date_preset="last_7d"
 )
@@ -376,7 +374,7 @@ facebook-ads-mcp-server/
 │   ├── s3_integration.py     # S3 media processing
 │   ├── queries.py            # 3 smart query tools
 │   └── insights.py           # 5 insights tools
-├── server.py                 # MCP server (34 tools)
+├── server.py                 # MCP server (32 tools)
 ├── requirements.txt
 ├── manifest.json
 └── README.md
@@ -417,7 +415,7 @@ npx -y @smithery/cli install @gomarble-ai/facebook-ads-mcp-server --client claud
 ## Changelog
 
 ### Version 2.0.0 (Current)
-- ✨ Complete rewrite with 34 tools (up from 21)
+- ✨ Complete rewrite with 32 tools (up from 21)
 - ✨ Full CRUD operations for campaigns, ad sets, and ads
 - ✨ Async architecture with httpx
 - ✨ Modular structure (11 modules)
