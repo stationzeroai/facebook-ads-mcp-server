@@ -17,50 +17,59 @@ from .api import (
 
 
 async def fetch_campaigns_by_name(
-    name_query: str,
+    campaign_names: List[str],
     fields: Optional[List[str]] = None,
     include_insights: bool = True,
     date_preset: Optional[str] = "last_30d",
     insights_fields: Optional[List[str]] = None,
-    limit: Optional[int] = 25
-) -> str:
-    """Search for campaigns by name and optionally include performance insights.
+    limit: Optional[int] = 500
+) -> Dict[str, Any]:
+    """Fetch campaigns by name with exact matching and optional performance insights.
 
-    This function searches for campaigns whose names contain the query string
-    and can automatically fetch performance metrics for matched campaigns.
+    This function retrieves campaigns using exact name matching (EQUAL operator) and can
+    automatically fetch performance metrics for matched campaigns. Each campaign name is
+    searched individually since Facebook's API doesn't support IN operator for names.
 
     Args:
-        name_query (str): Search term to match in campaign names (case-insensitive)
+        campaign_names (List[str]): List of campaign names to fetch using exact name matching
         fields (Optional[List[str]]): Campaign fields to retrieve. Default:
             ['id', 'name', 'objective', 'status', 'effective_status', 'daily_budget', 'lifetime_budget']
         include_insights (bool): If True, includes performance insights for each campaign. Default: True
         date_preset (Optional[str]): Date preset for insights. Default: "last_30d"
             Options: today, yesterday, last_7d, last_14d, last_30d, last_90d, lifetime, etc.
         insights_fields (Optional[List[str]]): Insights metrics to retrieve. Default:
-            ['impressions', 'clicks', 'spend', 'reach', 'cpc', 'cpm', 'ctr']
-        limit (Optional[int]): Maximum number of campaigns to return. Default: 25
+            ['impressions', 'clicks', 'spend', 'reach', 'cpc', 'cpm', 'ctr', 'frequency']
+        limit (Optional[int]): Maximum number of campaigns to return per name. Default: 500
 
     Returns:
-        str: JSON string containing matched campaigns with optional insights.
+        Dict: Dictionary containing:
+            - 'data' (List[Dict]): List of matched campaigns with insights
+            - 'summary' (Dict): Summary with requested_names, total_matched_campaigns,
+              campaigns_with_insights, unmatched_requests, and name_mappings
 
     Example:
         ```python
         result = await fetch_campaigns_by_name(
-            name_query="summer",
+            campaign_names=["Summer Sale", "Holiday Promo"],
             include_insights=True,
             date_preset="last_7d"
         )
-        # Returns campaigns with "summer" in the name plus their last 7 days performance
+        # Returns campaigns with exact names plus their last 7 days performance
         ```
     """
     act_id = get_act_id()
     if not act_id:
-        return json.dumps({
-            "error": "Ad account ID not configured. Set --facebook-ads-ad-account-id at server startup."
-        }, indent=2)
+        return {
+            "error": "Ad account ID not configured. Set --facebook-ads-ad-account-id at server startup.",
+            "data": [],
+            "summary": {"requested_names": campaign_names, "unmatched_requests": campaign_names}
+        }
 
-    if not name_query:
-        return json.dumps({"error": "No name query provided"}, indent=2)
+    if not campaign_names:
+        return {
+            "data": [],
+            "summary": {"requested_names": [], "unmatched_requests": []}
+        }
 
     access_token = get_access_token()
 
@@ -71,117 +80,156 @@ async def fetch_campaigns_by_name(
             'daily_budget', 'lifetime_budget', 'created_time', 'updated_time'
         ]
 
-    # Fetch all campaigns with name filtering
-    campaigns_url = f"{FB_GRAPH_URL}/{act_id}/campaigns"
-    campaigns_params = {
-        'access_token': access_token,
-        'fields': ','.join(fields),
-        'filtering': json.dumps([
+    if not insights_fields:
+        insights_fields = [
+            'impressions', 'clicks', 'spend', 'reach',
+            'cpc', 'cpm', 'ctr', 'frequency'
+        ]
+
+    # Step 1: Fetch each campaign with exact match
+    matched_campaigns = []
+
+    for requested_name in campaign_names:
+        name_filter = [
             {
                 "field": "name",
-                "operator": "CONTAIN",
-                "value": name_query
+                "operator": "EQUAL",
+                "value": requested_name
             }
-        ]),
-        'limit': limit
-    }
+        ]
 
-    try:
-        campaigns_data = await _make_graph_api_call(campaigns_url, campaigns_params)
-
-        if 'data' not in campaigns_data or not campaigns_data['data']:
-            return json.dumps({
-                "message": f"No campaigns found matching '{name_query}'",
-                "query": name_query,
-                "results": []
-            }, indent=2)
-
-        campaigns = campaigns_data['data']
-
-        # Fetch insights if requested
-        if include_insights:
-            if not insights_fields:
-                insights_fields = [
-                    'impressions', 'clicks', 'spend', 'reach',
-                    'cpc', 'cpm', 'ctr', 'frequency'
-                ]
-
-            for campaign in campaigns:
-                insights_url = f"{FB_GRAPH_URL}/{campaign['id']}/insights"
-
-                base_params = {'access_token': access_token}
-                insights_params = _build_insights_params(
-                    base_params,
-                    fields=insights_fields,
-                    date_preset=date_preset
-                )
-
-                try:
-                    insights_data = await _make_graph_api_call(insights_url, insights_params)
-                    campaign['insights'] = insights_data.get('data', [])
-                except Exception as e:
-                    campaign['insights_error'] = str(e)
-
-        result = {
-            "query": name_query,
-            "total_found": len(campaigns),
-            "campaigns": campaigns
+        campaigns_url = f"{FB_GRAPH_URL}/{act_id}/campaigns"
+        campaigns_params = {
+            'access_token': access_token,
+            'fields': ','.join(fields),
+            'filtering': json.dumps(name_filter),
+            'limit': limit
         }
 
-        return json.dumps(result, indent=2)
+        try:
+            campaigns_data = await _make_graph_api_call(campaigns_url, campaigns_params)
 
-    except Exception as e:
-        return json.dumps({
-            "error": "Failed to fetch campaigns by name",
-            "details": str(e),
-            "query": name_query
-        }, indent=2)
+            if campaigns_data.get("data"):
+                # Found exact match
+                for campaign in campaigns_data.get("data", []):
+                    campaign["requested_name"] = requested_name
+                    campaign["matched_name"] = requested_name  # Exact match
+                    matched_campaigns.append(campaign)
+
+        except Exception as e:
+            print(f"Error fetching campaign '{requested_name}': {str(e)}")
+
+    # Step 2: Fetch insights for each matched campaign
+    campaigns_with_insights = []
+
+    for campaign in matched_campaigns:
+        if include_insights:
+            insights_url = f"{FB_GRAPH_URL}/{campaign['id']}/insights"
+
+            base_params = {'access_token': access_token}
+            insights_params = _build_insights_params(
+                base_params,
+                fields=insights_fields,
+                date_preset=date_preset
+            )
+
+            try:
+                insights_data = await _make_graph_api_call(insights_url, insights_params)
+                campaign_with_insights = {
+                    **campaign,
+                    "insights": insights_data.get('data', [])
+                }
+                campaigns_with_insights.append(campaign_with_insights)
+
+            except Exception as e:
+                # Include campaign even if insights failed, but note the error
+                campaign_with_insights = {
+                    **campaign,
+                    "insights": [],
+                    "insights_error": str(e)
+                }
+                campaigns_with_insights.append(campaign_with_insights)
+        else:
+            campaigns_with_insights.append(campaign)
+
+    # Create summary information
+    name_mappings = {}
+    matched_requested_names = []
+
+    for campaign in matched_campaigns:
+        requested = campaign.get("requested_name", "")
+        matched = campaign.get("matched_name", "")
+        if requested:
+            name_mappings[requested] = matched
+            matched_requested_names.append(requested)
+
+    unmatched_requests = [name for name in campaign_names if name not in matched_requested_names]
+
+    return {
+        "data": campaigns_with_insights,
+        "summary": {
+            "requested_names": campaign_names,
+            "total_matched_campaigns": len(matched_campaigns),
+            "campaigns_with_insights": len([c for c in campaigns_with_insights if "insights_error" not in c]),
+            "unmatched_requests": unmatched_requests,
+            "name_mappings": name_mappings
+        }
+    }
 
 
 async def fetch_adsets_by_name(
-    name_query: str,
+    adset_names: List[str],
     fields: Optional[List[str]] = None,
     include_insights: bool = True,
     date_preset: Optional[str] = "last_30d",
     insights_fields: Optional[List[str]] = None,
-    limit: Optional[int] = 25
-) -> str:
-    """Search for ad sets by name and optionally include performance insights.
+    limit: Optional[int] = 500
+) -> Dict[str, Any]:
+    """Fetch ad sets by name with exact matching and optional performance insights.
 
-    This function searches for ad sets whose names contain the query string
-    and can automatically fetch performance metrics for matched ad sets.
+    This function retrieves ad sets using exact name matching (EQUAL operator) and can
+    automatically fetch performance metrics for matched ad sets. Each ad set name is
+    searched individually since Facebook's API doesn't support IN operator for names.
 
     Args:
-        name_query (str): Search term to match in ad set names (case-insensitive)
+        adset_names (List[str]): List of ad set names to fetch using exact name matching
         fields (Optional[List[str]]): Ad set fields to retrieve. Default:
             ['id', 'name', 'campaign_id', 'status', 'effective_status', 'daily_budget', 'lifetime_budget', 'optimization_goal']
         include_insights (bool): If True, includes performance insights for each ad set. Default: True
         date_preset (Optional[str]): Date preset for insights. Default: "last_30d"
         insights_fields (Optional[List[str]]): Insights metrics to retrieve. Default:
-            ['impressions', 'clicks', 'spend', 'reach', 'cpc', 'cpm', 'ctr']
-        limit (Optional[int]): Maximum number of ad sets to return. Default: 25
+            ['impressions', 'clicks', 'spend', 'reach', 'cpc', 'cpm', 'ctr', 'frequency']
+        limit (Optional[int]): Maximum number of ad sets to return per name. Default: 500
 
     Returns:
-        str: JSON string containing matched ad sets with optional insights.
+        Dict: Dictionary containing:
+            - 'data' (List[Dict]): List of matched ad sets with insights
+            - 'summary' (Dict): Summary with requested_names, total_matched_adsets,
+              adsets_with_insights, unmatched_requests, and name_mappings
 
     Example:
         ```python
         result = await fetch_adsets_by_name(
-            name_query="premium",
+            adset_names=["Premium Targeting", "Retargeting Audience"],
             include_insights=True,
             date_preset="last_7d"
         )
-        # Returns ad sets with "premium" in the name plus their last 7 days performance
+        # Returns ad sets with exact names plus their last 7 days performance
         ```
     """
     act_id = get_act_id()
     if not act_id:
-        return json.dumps({
-            "error": "Ad account ID not configured. Set --facebook-ads-ad-account-id at server startup."
-        }, indent=2)
+        return {
+            "error": "Ad account ID not configured. Set --facebook-ads-ad-account-id at server startup.",
+            "data": [],
+            "summary": {"requested_names": adset_names, "unmatched_requests": adset_names}
+        }
 
-    if not name_query:
-        return json.dumps({"error": "No name query provided"}, indent=2)
+    if not adset_names:
+        return {
+            "data": [],
+            "summary": {"requested_names": [], "unmatched_requests": []}
+        }
 
     access_token = get_access_token()
 
@@ -193,123 +241,199 @@ async def fetch_adsets_by_name(
             'billing_event', 'bid_amount', 'created_time', 'updated_time'
         ]
 
-    # Fetch all ad sets with name filtering
-    adsets_url = f"{FB_GRAPH_URL}/{act_id}/adsets"
-    adsets_params = {
-        'access_token': access_token,
-        'fields': ','.join(fields),
-        'filtering': json.dumps([
+    if not insights_fields:
+        insights_fields = [
+            'impressions', 'clicks', 'spend', 'reach',
+            'cpc', 'cpm', 'ctr', 'frequency'
+        ]
+
+    # Step 1: Fetch each ad set with exact match
+    matched_adsets = []
+
+    for requested_name in adset_names:
+        name_filter = [
             {
                 "field": "name",
-                "operator": "CONTAIN",
-                "value": name_query
+                "operator": "EQUAL",
+                "value": requested_name
             }
-        ]),
-        'limit': limit
-    }
+        ]
 
-    try:
-        adsets_data = await _make_graph_api_call(adsets_url, adsets_params)
-
-        if 'data' not in adsets_data or not adsets_data['data']:
-            return json.dumps({
-                "message": f"No ad sets found matching '{name_query}'",
-                "query": name_query,
-                "results": []
-            }, indent=2)
-
-        adsets = adsets_data['data']
-
-        # Fetch insights if requested
-        if include_insights:
-            if not insights_fields:
-                insights_fields = [
-                    'impressions', 'clicks', 'spend', 'reach',
-                    'cpc', 'cpm', 'ctr', 'frequency'
-                ]
-
-            for adset in adsets:
-                insights_url = f"{FB_GRAPH_URL}/{adset['id']}/insights"
-
-                base_params = {'access_token': access_token}
-                insights_params = _build_insights_params(
-                    base_params,
-                    fields=insights_fields,
-                    date_preset=date_preset
-                )
-
-                try:
-                    insights_data = await _make_graph_api_call(insights_url, insights_params)
-                    adset['insights'] = insights_data.get('data', [])
-                except Exception as e:
-                    adset['insights_error'] = str(e)
-
-        result = {
-            "query": name_query,
-            "total_found": len(adsets),
-            "adsets": adsets
+        adsets_url = f"{FB_GRAPH_URL}/{act_id}/adsets"
+        adsets_params = {
+            'access_token': access_token,
+            'fields': ','.join(fields),
+            'filtering': json.dumps(name_filter),
+            'limit': limit
         }
 
-        return json.dumps(result, indent=2)
+        try:
+            adsets_data = await _make_graph_api_call(adsets_url, adsets_params)
 
-    except Exception as e:
-        return json.dumps({
-            "error": "Failed to fetch ad sets by name",
-            "details": str(e),
-            "query": name_query
-        }, indent=2)
+            if adsets_data.get("data"):
+                # Found exact match
+                for adset in adsets_data.get("data", []):
+                    adset["requested_name"] = requested_name
+                    adset["matched_name"] = requested_name  # Exact match
+                    matched_adsets.append(adset)
+
+        except Exception as e:
+            print(f"Error fetching ad set '{requested_name}': {str(e)}")
+
+    # Step 2: Fetch insights for each matched ad set
+    adsets_with_insights = []
+
+    for adset in matched_adsets:
+        if include_insights:
+            insights_url = f"{FB_GRAPH_URL}/{adset['id']}/insights"
+
+            base_params = {'access_token': access_token}
+            insights_params = _build_insights_params(
+                base_params,
+                fields=insights_fields,
+                date_preset=date_preset
+            )
+
+            try:
+                insights_data = await _make_graph_api_call(insights_url, insights_params)
+                adset_with_insights = {
+                    **adset,
+                    "insights": insights_data.get('data', [])
+                }
+                adsets_with_insights.append(adset_with_insights)
+
+            except Exception as e:
+                # Include ad set even if insights failed, but note the error
+                print(f"Error fetching insights for ad set {adset['id']} ({adset['name']}): {str(e)}")
+                adset_with_insights = {
+                    **adset,
+                    "insights": [],
+                    "insights_error": str(e)
+                }
+                adsets_with_insights.append(adset_with_insights)
+        else:
+            adsets_with_insights.append(adset)
+
+    # Create summary information
+    name_mappings = {}
+    matched_requested_names = []
+
+    for adset in matched_adsets:
+        requested = adset.get("requested_name", "")
+        matched = adset.get("matched_name", "")
+        if requested:
+            name_mappings[requested] = matched
+            matched_requested_names.append(requested)
+
+    unmatched_requests = [name for name in adset_names if name not in matched_requested_names]
+
+    return {
+        "data": adsets_with_insights,
+        "summary": {
+            "requested_names": adset_names,
+            "total_matched_adsets": len(matched_adsets),
+            "adsets_with_insights": len([a for a in adsets_with_insights if "insights_error" not in a]),
+            "unmatched_requests": unmatched_requests,
+            "name_mappings": name_mappings
+        }
+    }
 
 
 async def fetch_objects_by_name(
-    name_query: str,
-    object_types: Optional[List[str]] = None,
+    object_names: List[str],
     include_insights: bool = True,
     date_preset: Optional[str] = "last_30d",
-    insights_fields: Optional[List[str]] = None,
-    limit: Optional[int] = 10
+    insights_fields: Optional[List[str]] = None
 ) -> str:
-    """Universal search for campaigns, ad sets, and ads by name with insights.
+    """Unified search for campaigns and ad sets by name with automatic cascading fallback.
 
-    This function searches across multiple object types simultaneously and returns
-    all matching results with optional performance insights.
+    This function automatically tries to find objects by name, first searching for campaigns,
+    then searching for ad sets for any names not found as campaigns. Each returned object
+    includes an 'object_type' field to identify whether it's a campaign or ad set.
+
+    This implements the Adam-React pattern with cascading fallback:
+    1. Try all names as campaigns first (exact match)
+    2. For unmatched names, try them as ad sets (exact match)
+    3. Return combined results with clear object type identification
 
     Args:
-        name_query (str): Search term to match in object names (case-insensitive)
-        object_types (Optional[List[str]]): Types of objects to search. Default: ['campaigns', 'adsets', 'ads']
-            Options: 'campaigns', 'adsets', 'ads'
+        object_names (List[str]): List of object names to fetch. Uses exact name matching only.
+            The function will automatically try each name as a campaign first, then as an ad set
+            if not found. Empty list returns no results.
         include_insights (bool): If True, includes performance insights for each object. Default: True
         date_preset (Optional[str]): Date preset for insights. Default: "last_30d"
+            Options: today, yesterday, last_7d, last_14d, last_30d, last_90d, lifetime, etc.
         insights_fields (Optional[List[str]]): Insights metrics to retrieve. Default:
-            ['impressions', 'clicks', 'spend', 'reach', 'cpc', 'cpm', 'ctr']
-        limit (Optional[int]): Maximum number of each object type to return. Default: 10
+            ['impressions', 'clicks', 'spend', 'reach', 'cpc', 'cpm', 'ctr', 'frequency']
 
     Returns:
-        str: JSON string containing all matched objects organized by type with optional insights.
+        str: JSON string containing all matched objects with the following structure:
+            - 'data' (List[Dict]): Combined list of found objects (campaigns and ad sets), each containing:
+                - All standard campaign/ad set fields (id, name, effective_status)
+                - 'object_type' (str): Either "campaign" or "adset"
+                - 'requested_name' (str): Originally requested name
+                - 'matched_name' (str): Actual name that was matched
+                - 'insights' (List[Dict]): Performance insights data
+                - 'insights_error' (str, optional): Error message if insights failed
+            - 'summary' (Dict): Summary information containing:
+                - 'requested_names' (List[str]): All originally requested names
+                - 'found_as_campaigns' (List[str]): Names found as campaigns
+                - 'found_as_adsets' (List[str]): Names found as ad sets
+                - 'not_found' (List[str]): Names not found as either campaigns or ad sets
+                - 'total_objects_found' (int): Total number of objects found
+                - 'campaigns_count' (int): Number of campaigns found
+                - 'adsets_count' (int): Number of ad sets found
+                - 'objects_with_insights' (int): Number with successful insights
 
     Example:
         ```python
         result = await fetch_objects_by_name(
-            name_query="black friday",
-            object_types=["campaigns", "adsets"],
+            object_names=["Summer Sale Campaign", "Holiday Ad Set", "Black Friday"],
             include_insights=True,
             date_preset="last_7d"
         )
-        # Returns all campaigns and ad sets with "black friday" in the name plus their performance
+        # Returns campaigns and ad sets found, each with object_type field
+        # Automatically tries as campaigns first, then ad sets for unmatched names
         ```
+
+    Note:
+        This function implements intelligent cascading fallback:
+        1. Tries all names as campaigns first
+        2. For unmatched names, tries them as ad sets
+        3. Returns combined results with clear object type identification
+        Each object in the result includes an 'object_type' field for easy identification.
     """
     act_id = get_act_id()
     if not act_id:
         return json.dumps({
-            "error": "Ad account ID not configured. Set --facebook-ads-ad-account-id at server startup."
+            "error": "Ad account ID not configured. Set --facebook-ads-ad-account-id at server startup.",
+            "data": [],
+            "summary": {
+                "requested_names": object_names,
+                "found_as_campaigns": [],
+                "found_as_adsets": [],
+                "not_found": object_names,
+                "total_objects_found": 0,
+                "campaigns_count": 0,
+                "adsets_count": 0,
+                "objects_with_insights": 0
+            }
         }, indent=2)
 
-    if not name_query:
-        return json.dumps({"error": "No name query provided"}, indent=2)
-
-    if not object_types:
-        object_types = ['campaigns', 'adsets', 'ads']
-
-    access_token = get_access_token()
+    if not object_names:
+        return json.dumps({
+            "data": [],
+            "summary": {
+                "requested_names": [],
+                "found_as_campaigns": [],
+                "found_as_adsets": [],
+                "not_found": [],
+                "total_objects_found": 0,
+                "campaigns_count": 0,
+                "adsets_count": 0,
+                "objects_with_insights": 0
+            }
+        }, indent=2)
 
     if not insights_fields:
         insights_fields = [
@@ -317,113 +441,63 @@ async def fetch_objects_by_name(
             'cpc', 'cpm', 'ctr', 'frequency'
         ]
 
-    results = {
-        "query": name_query,
-        "date_preset": date_preset if include_insights else None,
-        "results": {}
+    # Step 1: Try fetching all names as campaigns first
+    campaigns_result = await fetch_campaigns_by_name(
+        campaign_names=object_names,
+        include_insights=include_insights,
+        date_preset=date_preset,
+        insights_fields=insights_fields
+    )
+
+    # Step 2: Identify which names weren't found as campaigns
+    unmatched_campaign_names = campaigns_result.get("summary", {}).get("unmatched_requests", [])
+
+    # Step 3: Try fetching unmatched names as ad sets
+    adsets_result = None
+    if unmatched_campaign_names:
+        adsets_result = await fetch_adsets_by_name(
+            adset_names=unmatched_campaign_names,
+            include_insights=include_insights,
+            date_preset=date_preset,
+            insights_fields=insights_fields
+        )
+
+    # Step 4: Combine results
+    all_objects = []
+
+    # Add campaigns with object_type field
+    for campaign in campaigns_result.get("data", []):
+        campaign["object_type"] = "campaign"
+        all_objects.append(campaign)
+
+    # Add ad sets with object_type field
+    if adsets_result:
+        for adset in adsets_result.get("data", []):
+            adset["object_type"] = "adset"
+            all_objects.append(adset)
+
+    # Step 5: Calculate summary statistics
+    found_as_campaigns = [obj["requested_name"] for obj in campaigns_result.get("data", [])]
+    found_as_adsets = []
+    if adsets_result:
+        found_as_adsets = [obj["requested_name"] for obj in adsets_result.get("data", [])]
+
+    all_found_names = found_as_campaigns + found_as_adsets
+    not_found = [name for name in object_names if name not in all_found_names]
+
+    # Step 6: Return combined results
+    result = {
+        "data": all_objects,
+        "summary": {
+            "requested_names": object_names,
+            "found_as_campaigns": found_as_campaigns,
+            "found_as_adsets": found_as_adsets,
+            "not_found": not_found,
+            "total_objects_found": len(all_objects),
+            "campaigns_count": len(campaigns_result.get("data", [])),
+            "adsets_count": len(adsets_result.get("data", [])) if adsets_result else 0,
+            "objects_with_insights": len([obj for obj in all_objects if "insights_error" not in obj])
+        }
     }
 
-    # Search campaigns
-    if 'campaigns' in object_types:
-        try:
-            campaigns_url = f"{FB_GRAPH_URL}/{act_id}/campaigns"
-            campaigns_params = {
-                'access_token': access_token,
-                'fields': 'id,name,objective,status,effective_status,daily_budget,lifetime_budget',
-                'filtering': json.dumps([{"field": "name", "operator": "CONTAIN", "value": name_query}]),
-                'limit': limit
-            }
-
-            campaigns_data = await _make_graph_api_call(campaigns_url, campaigns_params)
-            campaigns = campaigns_data.get('data', [])
-
-            if include_insights:
-                for campaign in campaigns:
-                    insights_url = f"{FB_GRAPH_URL}/{campaign['id']}/insights"
-                    base_params = {'access_token': access_token}
-                    insights_params = _build_insights_params(
-                        base_params, fields=insights_fields, date_preset=date_preset
-                    )
-                    try:
-                        insights_data = await _make_graph_api_call(insights_url, insights_params)
-                        campaign['insights'] = insights_data.get('data', [])
-                    except:
-                        campaign['insights'] = []
-
-            results['results']['campaigns'] = campaigns
-
-        except Exception as e:
-            results['results']['campaigns_error'] = str(e)
-
-    # Search ad sets
-    if 'adsets' in object_types:
-        try:
-            adsets_url = f"{FB_GRAPH_URL}/{act_id}/adsets"
-            adsets_params = {
-                'access_token': access_token,
-                'fields': 'id,name,campaign_id,status,effective_status,optimization_goal,daily_budget,lifetime_budget',
-                'filtering': json.dumps([{"field": "name", "operator": "CONTAIN", "value": name_query}]),
-                'limit': limit
-            }
-
-            adsets_data = await _make_graph_api_call(adsets_url, adsets_params)
-            adsets = adsets_data.get('data', [])
-
-            if include_insights:
-                for adset in adsets:
-                    insights_url = f"{FB_GRAPH_URL}/{adset['id']}/insights"
-                    base_params = {'access_token': access_token}
-                    insights_params = _build_insights_params(
-                        base_params, fields=insights_fields, date_preset=date_preset
-                    )
-                    try:
-                        insights_data = await _make_graph_api_call(insights_url, insights_params)
-                        adset['insights'] = insights_data.get('data', [])
-                    except:
-                        adset['insights'] = []
-
-            results['results']['adsets'] = adsets
-
-        except Exception as e:
-            results['results']['adsets_error'] = str(e)
-
-    # Search ads
-    if 'ads' in object_types:
-        try:
-            ads_url = f"{FB_GRAPH_URL}/{act_id}/ads"
-            ads_params = {
-                'access_token': access_token,
-                'fields': 'id,name,campaign_id,adset_id,status,effective_status',
-                'filtering': json.dumps([{"field": "name", "operator": "CONTAIN", "value": name_query}]),
-                'limit': limit
-            }
-
-            ads_data = await _make_graph_api_call(ads_url, ads_params)
-            ads = ads_data.get('data', [])
-
-            if include_insights:
-                for ad in ads:
-                    insights_url = f"{FB_GRAPH_URL}/{ad['id']}/insights"
-                    base_params = {'access_token': access_token}
-                    insights_params = _build_insights_params(
-                        base_params, fields=insights_fields, date_preset=date_preset
-                    )
-                    try:
-                        insights_data = await _make_graph_api_call(insights_url, insights_params)
-                        ad['insights'] = insights_data.get('data', [])
-                    except:
-                        ad['insights'] = []
-
-            results['results']['ads'] = ads
-
-        except Exception as e:
-            results['results']['ads_error'] = str(e)
-
-    # Add summary counts
-    results['summary'] = {
-        'total_campaigns': len(results['results'].get('campaigns', [])),
-        'total_adsets': len(results['results'].get('adsets', [])),
-        'total_ads': len(results['results'].get('ads', []))
-    }
-
-    return json.dumps(results, indent=2)
+    return json.dumps(result, indent=2)

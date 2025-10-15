@@ -742,29 +742,48 @@ async def facebook_list_pixels(
 
 @mcp.tool()
 async def facebook_fetch_objects_by_name(
-    name_query: str,
-    object_types: Optional[List[str]] = None,
+    object_names: List[str],
     include_insights: bool = True,
     date_preset: Optional[str] = "last_30d",
-    insights_fields: Optional[List[str]] = None,
-    limit: Optional[int] = 10
+    insights_fields: Optional[List[str]] = None
 ) -> str:
-    """Universal search for campaigns, ad sets, and ads by name with insights.
+    """Unified search for campaigns and ad sets by name with automatic cascading fallback.
+
+    This tool automatically tries to find objects by name using exact matching:
+    1. First searches for campaigns with the given names
+    2. For names not found as campaigns, searches for ad sets
+    3. Returns combined results with 'object_type' field identifying each object
+
+    Each returned object includes:
+    - 'object_type': Either "campaign" or "adset"
+    - 'requested_name': The name you searched for
+    - 'matched_name': The actual name found (same as requested for exact matches)
+    - All standard fields (id, name, status, budget, etc.)
+    - Performance insights (if include_insights=True)
 
     Args:
-        name_query (str): Search term to match in object names (case-insensitive)
-        object_types (Optional[List[str]]): Types of objects to search. Default: ['campaigns', 'adsets', 'ads']
-        include_insights (bool): If True, includes performance insights. Default: True
+        object_names (List[str]): List of object names to search for using exact name matching.
+            Example: ["Summer Sale Campaign", "Holiday Promo", "Q4 Ads"]
+        include_insights (bool): If True, includes performance insights for each object. Default: True
         date_preset (Optional[str]): Date preset for insights. Default: "last_30d"
-        insights_fields (Optional[List[str]]): Insights metrics to retrieve.
-        limit (Optional[int]): Maximum number of each object type to return. Default: 10
+            Options: today, yesterday, last_7d, last_14d, last_30d, last_90d, lifetime
+        insights_fields (Optional[List[str]]): Specific metrics to retrieve. Default:
+            ['impressions', 'clicks', 'spend', 'reach', 'cpc', 'cpm', 'ctr', 'frequency']
 
     Returns:
-        str: JSON string containing all matched objects organized by type with optional insights.
+        str: JSON string with structure:
+            - 'data': List of found objects, each with 'object_type' field
+            - 'summary': Contains found_as_campaigns, found_as_adsets, not_found lists,
+              plus counts and statistics
+
+    Example:
+        Input: ["Summer Campaign", "Fall Targeting"]
+        Output includes:
+        - "Summer Campaign" with object_type="campaign" (if found as campaign)
+        - "Fall Targeting" with object_type="adset" (if not found as campaign but exists as ad set)
     """
     return await queries.fetch_objects_by_name(
-        name_query, object_types, include_insights,
-        date_preset, insights_fields, limit
+        object_names, include_insights, date_preset, insights_fields
     )
 
 
